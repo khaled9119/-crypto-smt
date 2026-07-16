@@ -36,29 +36,27 @@ price_history = {"ethereum": deque(maxlen=120), "binancecoin": deque(maxlen=120)
 whale_volume_history = deque(maxlen=120)
 whale_count_history = deque(maxlen=120)
 
+# Pre-populate charts on cold start (synchronous, not background)
+try:
+    for coin in ["ethereum", "binancecoin"]:
+        p = get_usd_price(coin)
+        if p:
+            for _ in range(5):
+                price_history[coin].append(p)
+except:
+    pass
+try:
+    all_whales = db.get_whale_txns(200)
+    all_whales.reverse()
+    for i in range(0, len(all_whales), 10):
+        batch = all_whales[i:i+10]
+        vol = sum(w.get("usd_value", 0) or 0 for w in batch)
+        whale_volume_history.append(vol)
+        whale_count_history.append(len(batch))
+except:
+    pass
+
 def _record_snapshot():
-    # Pre-populate deques from DB so charts aren't empty on cold start
-    try:
-        from database.db import Database
-        _db = Database()
-        all_whales = _db.get_whale_txns(200)
-        all_whales.reverse()
-        for i in range(0, len(all_whales), 10):
-            batch = all_whales[i:i+10]
-            vol = sum(w.get("usd_value", 0) or 0 for w in batch)
-            whale_volume_history.append(vol)
-            whale_count_history.append(len(batch))
-    except:
-        pass
-    # Initial snapshot so price chart isn't empty
-    try:
-        for coin in ["ethereum", "binancecoin"]:
-            p = get_usd_price(coin)
-            if p:
-                for _ in range(5):
-                    price_history[coin].append(p)
-    except:
-        pass
     while True:
         time.sleep(30)
         try:
