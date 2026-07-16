@@ -390,26 +390,35 @@ input::placeholder{color:var(--dim)}
 
 <!-- MARKETS -->
 <div id="tab-markets" class="tab">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<h3 style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">CoinGecko</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
 <div class="card">
-<div class="card-header"><span class="card-title">🔥 Trending</span></div>
-<div class="card-body no-pad" id="marketTrending"></div>
-</div>
-<div class="card">
-<div class="card-header"><span class="card-title">📈 Top Gainers (24h)</span></div>
-<div class="card-body no-pad" id="marketGainers"></div>
+<div class="card-header"><span class="card-title">🔥 Trending</span><span style="font-size:9px;color:var(--dim)">CoinGecko</span></div>
+<div class="card-body no-pad scroll-list" id="marketTrending" style="max-height:360px"></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="card-title">📉 Top Losers (24h)</span></div>
-<div class="card-body no-pad" id="marketLosers"></div>
+<div class="card-header"><span class="card-title">📈 Top Gainers</span><span style="font-size:9px;color:var(--dim)">24h · Top 50</span></div>
+<div class="card-body no-pad scroll-list" id="marketGainers" style="max-height:360px"></div>
+</div>
+</div>
+<h3 style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Binance Markets Live</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+<div class="card">
+<div class="card-header"><span class="card-title">📈 Binance Gainers</span><span style="font-size:9px;color:var(--dim)" id="binanceUpdate1">USDT pairs</span></div>
+<div class="card-body no-pad scroll-list" id="binanceGainers" style="max-height:400px"></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="card-title">📡 Market Stats</span></div>
-<div class="card-body" id="marketStats" style="font-size:13px;line-height:1.8;color:var(--fg2)">
-Data from CoinGecko · Updated every 60s<br>
-<span style="font-size:11px">Click any coin to search on Token Scanner</span>
+<div class="card-header"><span class="card-title">🔥 Volume Surge</span><span style="font-size:9px;color:var(--dim)">High volume + pump</span></div>
+<div class="card-body no-pad scroll-list" id="binanceSurge" style="max-height:400px"></div>
+</div>
+<div class="card">
+<div class="card-header"><span class="card-title">🆕 New Listings</span><span style="font-size:9px;color:var(--dim)">Binance announcements</span></div>
+<div class="card-body no-pad scroll-list" id="binanceNews" style="max-height:400px"></div>
 </div>
 </div>
+<div class="card">
+<div class="card-header"><span class="card-title">📉 Binance Losers</span><span style="font-size:9px;color:var(--dim)">USDT pairs dropping</span></div>
+<div class="card-body no-pad scroll-list" id="binanceLosers" style="max-height:260px"></div>
 </div>
 </div>
 
@@ -780,33 +789,49 @@ if(r[c]){const extra=document.createElement("span");extra.style.cssText="font-si
 // === MARKETS ===
 async function loadMarkets(){
 try{
-const m=await api("/api/markets");
-// Trending
+const m=await api("/api/markets"),b=await api("/api/binance/markets"),n=await api("/api/binance/news");
+// CoinGecko Trending
 const te=document.getElementById("marketTrending");
-if(m.trending?.length){te.innerHTML=m.trending.map((x,i)=>`<div class="token-item" onclick="switchToScan('${x.symbol}')" style="font-size:12px">
+if(m.trending?.length){te.innerHTML=m.trending.map((x,i)=>`<div class="token-item" onclick="switchToScan('${x.symbol}')">
 <span>#${i+1} <strong>${x.name}</strong> <span style="color:var(--dim);font-size:10px">${x.symbol}</span></span>
 <span style="color:var(--cyan);font-family:var(--mono)">${x.price_btc?x.price_btc.toFixed(8):'?'} BTC</span>
 </div>`).join("")}else{te.innerHTML='<div class="empty-state"><div class="icon">🔥</div><p>No data</p></div>'}
-// Gainers
+// CoinGecko Gainers
 const ga=document.getElementById("marketGainers");
-if(m.gainers?.length){ga.innerHTML=m.gainers.map(x=>`<div class="token-item" onclick="switchToScan('${x.symbol}')" style="font-size:12px">
+if(m.gainers?.length){ga.innerHTML=m.gainers.map(x=>`<div class="token-item" onclick="switchToScan('${x.symbol}')">
 <span><strong>${x.symbol}</strong> <span style="color:var(--dim);font-size:10px">${x.name}</span></span>
 <div style="text-align:right"><span style="font-family:var(--mono);font-weight:600">$${x.price?.toLocaleString()||'?'}</span>
 <br><span style="font-size:11px;color:var(--green)">+${x.change_24h}%</span></div>
 </div>`).join("")}else{ga.innerHTML='<div class="empty-state"><div class="icon">📈</div><p>No data</p></div>'}
-// Losers
-const lo=document.getElementById("marketLosers");
-if(m.losers?.length){lo.innerHTML=m.losers.map(x=>`<div class="token-item" style="font-size:12px">
-<span><strong>${x.symbol}</strong> <span style="color:var(--dim);font-size:10px">${x.name}</span></span>
-<div style="text-align:right"><span style="font-family:var(--mono);font-weight:600">$${x.price?.toLocaleString()||'?'}</span>
-<br><span style="font-size:11px;color:var(--red)">${x.change_24h}%</span></div>
-</div>`).join("")}else{lo.innerHTML='<div class="empty-state"><div class="icon">📉</div><p>No data</p></div>'}
-document.getElementById("marketStats").innerHTML=`
-Data from CoinGecko · Updated every 60s<br>
-<span style="font-size:11px;color:var(--dim)">Click any coin to scan on Token Analyzer</span><br><br>
-<strong>Trending:</strong> ${m.trending?.length||0} coins<br>
-<strong>Top movers:</strong> Top 50 by volume<br>
-<strong>New listings:</strong> Check <a href="https://www.binance.com/en/support/announcement/c-48?navId=48" target="_blank" style="color:var(--cyan)">Binance Announcements</a>`;
+// === BINANCE ===
+document.getElementById("binanceUpdate1").textContent=`${b.total_pairs||0} USDT pairs`;
+// Binance Gainers
+const bg=document.getElementById("binanceGainers");
+if(b.gainers?.length){bg.innerHTML=b.gainers.slice(0,20).map(x=>`<div class="token-item" onclick="switchToScan('${x.symbol}')">
+<span><strong>${x.symbol}</strong> <span style="color:var(--dim);font-size:10px">$${x.price?.toLocaleString()||'?'}</span></span>
+<div style="text-align:right"><span style="font-family:var(--mono);font-weight:600;color:var(--green)">+${x.change_24h}%</span>
+<br><span style="font-size:10px;color:var(--dim)">Vol: $${(x.volume/1e6).toFixed(1)}M</span></div>
+</div>`).join("")}else{bg.innerHTML='<div class="empty-state"><div class="icon">📈</div><p>No data</p></div>'}
+// Binance Losers
+const bl=document.getElementById("binanceLosers");
+if(b.losers?.length){bl.innerHTML=b.losers.slice(0,15).map(x=>`<div class="token-item">
+<span><strong>${x.symbol}</strong> <span style="color:var(--dim);font-size:10px">$${x.price?.toLocaleString()||'?'}</span></span>
+<div style="text-align:right"><span style="font-family:var(--mono);font-weight:600;color:var(--red)">${x.change_24h}%</span>
+<br><span style="font-size:10px;color:var(--dim)">Vol: $${(x.volume/1e6).toFixed(1)}M</span></div>
+</div>`).join("")}else{bl.innerHTML='<div class="empty-state"><div class="icon">📉</div><p>No data</p></div>'}
+// Volume Surge
+const bs=document.getElementById("binanceSurge");
+if(b.volume_surge?.length){bs.innerHTML=b.volume_surge.map(x=>`<div class="token-item" onclick="switchToScan('${x.symbol}')">
+<span><strong>${x.symbol}</strong> <span style="color:var(--dim);font-size:10px">Vol: $${(x.volume/1e6).toFixed(1)}M</span></span>
+<div style="text-align:right"><span style="font-family:var(--mono);font-weight:600;color:var(--cyan)">+${x.change_24h}%</span>
+<br><span style="font-size:10px;color:var(--green)">$ ${x.price?.toLocaleString()||'?'}</span></div>
+</div>`).join("")}else{bs.innerHTML='<div class="empty-state"><div class="icon">🔥</div><p>No data</p></div>'}
+// Binance News
+const bn=document.getElementById("binanceNews");
+if(n?.length){bn.innerHTML=n.map(x=>`<div class="token-item" onclick="window.open('${x.url}','_blank')">
+<span><span style="font-size:10px;color:var(--dim)">${x.date?.slice(0,10)||''}</span><br><strong style="font-size:11px">${x.title}</strong></span>
+<span style="color:var(--cyan);font-size:10px">Open ↗</span>
+</div>`).join("")}else{bn.innerHTML='<div class="empty-state"><div class="icon">🆕</div><p>No new listings</p></div>'}
 }catch(e){}}
 function switchToScan(sym){document.querySelector('[data-tab=analyze]').click();document.getElementById("tokenAddr").value=sym;}
 

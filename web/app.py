@@ -448,6 +448,99 @@ def api_markets():
     return jsonify(result)
 
 
+# ===== BINANCE MARKETS =====
+
+BINANCE_CACHE = {}
+BINANCE_CACHE_TIME = 0
+
+@ app.route("/api/binance/markets")
+def api_binance_markets():
+    global BINANCE_CACHE, BINANCE_CACHE_TIME
+    now = time.time()
+    if now - BINANCE_CACHE_TIME < 30 and BINANCE_CACHE:
+        return jsonify(BINANCE_CACHE)
+    result = {"gainers": [], "losers": [], "volume_surge": [], "new_pairs": []}
+    try:
+        r = requests.get("https://api.binance.com/api/v3/ticker/24hr", timeout=10)
+        if r.status_code != 200:
+            return jsonify(result)
+        all_data = r.json()
+        # Filter USDT pairs only
+        usdt_pairs = [t for t in all_data if t.get("symbol", "").endswith("USDT")]
+        # Sort by price change percent
+        with_change = []
+        for t in usdt_pairs:
+            try:
+                chg = float(t.get("priceChangePercent", 0))
+                vol = float(t.get("quoteVolume", 0))
+                price = float(t.get("lastPrice", 0))
+                if vol > 100000 and price > 0:  # Min $100k volume
+                    with_change.append({
+                        "symbol": t["symbol"].replace("USDT", ""),
+                        "price": price,
+                        "change_24h": round(chg, 2),
+                        "volume": vol,
+                        "high": float(t.get("highPrice", 0)),
+                        "low": float(t.get("lowPrice", 0)),
+                    })
+            except Exception:
+                continue
+        # Gainers
+        sorted_gainers = sorted(with_change, key=lambda x: x["change_24h"], reverse=True)
+        result["gainers"] = [c for c in sorted_gainers if c["change_24h"] > 0][:20]
+        # Losers
+        sorted_losers = sorted(with_change, key=lambda x: x["change_24h"])
+        result["losers"] = [c for c in sorted_losers if c["change_24h"] < 0][:20]
+        # Volume surge (highest volume relative to usual - approximate by vol/avg)
+        for c in sorted_gainers:
+            if c["volume"] > 5000000 and c["change_24h"] > 5:  # >$5M vol and >5% up
+                c["surge_score"] = round(c["volume"] / (c["price"] * 1000), 0)
+                result["volume_surge"].append(c)
+                if len(result["volume_surge"]) >= 10:
+                    break
+        # Count total
+        result["total_pairs"] = len(usdt_pairs)
+        result["total_gainers"] = len(result["gainers"])
+        result["total_losers"] = len(result["losers"])
+    except Exception as e:
+        result["error"] = str(e)
+    BINANCE_CACHE = result
+    BINANCE_CACHE_TIME = now
+    return jsonify(result)
+
+# ===== BINANCE NEW LISTINGS (via announcements) =====
+
+BINANCE_NEWS_CACHE = []
+BINANCE_NEWS_CACHE_TIME = 0
+
+@ app.route("/api/binance/news")
+def api_binance_news():
+    global BINANCE_NEWS_CACHE, BINANCE_NEWS_CACHE_TIME
+    now = time.time()
+    if now - BINANCE_NEWS_CACHE_TIME < 300 and BINANCE_NEWS_CACHE:
+        return jsonify(BINANCE_NEWS_CACHE)
+    result = []
+    try:
+        r = requests.get("https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=15", 
+            headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if r.status_code == 200:
+            articles = r.json().get("data", {}).get("catalogs", [])
+            for cat in articles:
+                for art in cat.get("articles", []):
+                    title = art.get("title", "")
+                    if any(kw in title.lower() for kw in ["listing", "launchpool", "new", "launchpad", "introduces"]):
+                        result.append({
+                            "title": title,
+                            "date": art.get("releaseDate", ""),
+                            "url": f"https://www.binance.com/en/support/announcement/{art.get('code','')}",
+                        })
+    except Exception:
+        pass
+    BINANCE_NEWS_CACHE = result[:10]
+    BINANCE_NEWS_CACHE_TIME = now
+    return jsonify(BINANCE_NEWS_CACHE)
+
+
 def main():
     import sys
     if hasattr(sys.stdout, 'reconfigure'):
