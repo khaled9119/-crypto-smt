@@ -17,7 +17,7 @@ from tracker.smartwallet import SmartWalletTracker
 from tracker.notifier import load_config as load_tg_config, save_config as save_tg_config, send as test_tg
 from database.db import Database
 from utils.helpers import is_valid_address, format_usd
-from config import ALERTS
+from config import ALERTS, ETHERSCAN_API_KEY, BSCSCAN_API_KEY
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.urandom(16).hex()
@@ -85,6 +85,10 @@ def api_status():
             "price_bnb": price_bnb[-60:] if price_bnb else [],
         },
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "api_keys": {
+            "etherscan": bool(ETHERSCAN_API_KEY),
+            "bscscan": bool(BSCSCAN_API_KEY),
+        },
     })
 
 @app.route("/api/whales")

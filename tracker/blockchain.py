@@ -171,9 +171,9 @@ def get_token_price(token_address, chain_id):
 
 
 def get_explorer_txns(address, chain_id, api_key, page=1, offset=50):
-    if not api_key:
-        return []
     cfg = CHAINS[chain_id]
+    if not api_key or not cfg["explorer"]:
+        return _rpc_native_txns(address, chain_id, offset)
     url = f"{cfg['explorer']}"
     params = {
         "module": "account",
@@ -193,13 +193,13 @@ def get_explorer_txns(address, chain_id, api_key, page=1, offset=50):
             return data.get("result", [])
     except Exception:
         pass
-    return []
+    return _rpc_native_txns(address, chain_id, offset)
 
 
 def get_token_txns(address, chain_id, api_key, page=1, offset=50):
-    if not api_key:
-        return []
     cfg = CHAINS[chain_id]
+    if not api_key or not cfg["explorer"]:
+        return _rpc_token_txns(address, chain_id, offset)
     url = f"{cfg['explorer']}"
     params = {
         "module": "account",
@@ -219,4 +219,97 @@ def get_token_txns(address, chain_id, api_key, page=1, offset=50):
             return data.get("result", [])
     except Exception:
         pass
-    return []
+    return _rpc_token_txns(address, chain_id, offset)
+
+
+def _rpc_native_txns(address, chain_id, limit=50):
+    """Fallback: scan recent blocks via RPC for native coin txns involving address"""
+    w3 = Web3Client().get_w3(chain_id)
+    if not w3:
+        return []
+    addr = address.lower()
+    results = []
+    try:
+        latest = w3.eth.block_number
+        start = max(0, latest - 2000)
+        for bn in range(latest, start, -1):
+            if len(results) >= limit:
+                break
+            try:
+                block = w3.eth.get_block(bn, full_transactions=True)
+                for tx in block.get("transactions", []):
+                    tx_from = tx.get("from", "").lower() if tx.get("from") else ""
+                    tx_to = tx.get("to", "").lower() if tx.get("to") else ""
+                    if tx_from == addr or tx_to == addr:
+                        val = tx.get("value", 0)
+                        if isinstance(val, int) and val > 0:
+                            results.append({
+                                "hash": tx.get("hash", b"").hex() if isinstance(tx.get("hash"), bytes) else str(tx.get("hash", "")),
+                                "contractAddress": "",
+                                "tokenSymbol": CHAINS[chain_id]["symbol"],
+                                "tokenName": CHAINS[chain_id]["name"],
+                                "value": str(val),
+                                "tokenDecimal": str(CHAINS[chain_id]["decimals"]),
+                                "from": tx.get("from", ""),
+                                "to": tx.get("to", ""),
+                                "timeStamp": str(block.get("timestamp", 0)),
+                            })
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return results
+
+
+def _rpc_token_txns(address, chain_id, limit=50):
+    """Fallback: scan ERC-20 Transfer events via RPC for token txns involving address"""
+    _client = Web3Client()
+    w3 = _client.get_w3(chain_id)
+    if not w3:
+        return []
+    transfer_sig = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    results = []
+    try:
+        latest = w3.eth.block_number
+        start = max(0, latest - 5000)
+        try:
+            logs = w3.eth.get_logs({
+                "fromBlock": start,
+                "address": None,
+                "topics": [transfer_sig, None, None],
+            }, timeout=15)
+        except Exception:
+            logs = []
+        for log in logs:
+            if len(results) >= limit:
+                break
+            topic_from = "0x" + log["topics"][1].hex()[-40:]
+            topic_to = "0x" + log["topics"][2].hex()[-40:]
+            if topic_from.lower() != address.lower() and topic_to.lower() != address.lower():
+                continue
+            val = int.from_bytes(log["data"], "big") if len(log["data"]) > 0 else 0
+            token_addr = log["address"]
+            try:
+                token = w3.eth.contract(address=token_addr, abi=[
+                    {"constant": True, "inputs": [], "name": "symbol", "outputs": [{"name":"","type":"string"}], "type":"function"},
+                    {"constant": True, "inputs": [], "name": "decimals", "outputs": [{"name":"","type":"uint8"}], "type":"function"},
+                ])
+                t_symbol = token.functions.symbol().call()[:15]
+                t_decimals = token.functions.decimals().call()
+            except Exception:
+                t_symbol = "TOKEN"
+                t_decimals = 18
+            results.append({
+                "hash": log["transactionHash"].hex(),
+                "contractAddress": token_addr,
+                "tokenSymbol": t_symbol,
+                "tokenName": t_symbol,
+                "value": str(val),
+                "tokenDecimal": str(t_decimals),
+                "from": topic_from,
+                "to": topic_to,
+                "timeStamp": str(log.get("blockNumber", 0)),
+            })
+    except Exception:
+        pass
+    return results

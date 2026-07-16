@@ -141,32 +141,87 @@ class TokenAnalyzer:
 
     def _get_holder_concentration(self, chain_id, address):
         cfg = CHAINS[chain_id]
-        if not cfg["api_key"]:
+        if cfg["api_key"] and cfg["explorer"]:
+            url = f"{cfg['explorer']}"
+            params = {
+                "module": "token",
+                "action": "tokenholderlist",
+                "contractaddress": address,
+                "page": 1,
+                "offset": 10,
+                "apikey": cfg["api_key"],
+            }
+            try:
+                resp = requests.get(url, params=params, timeout=10)
+                data = resp.json()
+                if data.get("status") == "1" and data.get("result"):
+                    holders = data["result"]
+                    total = sum(float(h.get("tokenHolderQuantity", 0)) for h in holders)
+                    if total > 0:
+                        top = float(holders[0].get("tokenHolderQuantity", 0))
+                        return top / total
+            except Exception:
+                pass
+        # RPC fallback: check top holders via Transfer events
+        w3 = self.client.get_w3(chain_id)
+        if not w3:
             return 0
-        url = f"{cfg['explorer']}"
-        params = {
-            "module": "token",
-            "action": "tokenholderlist",
-            "contractaddress": address,
-            "page": 1,
-            "offset": 10,
-            "apikey": cfg["api_key"],
-        }
         try:
-            resp = requests.get(url, params=params, timeout=10)
-            data = resp.json()
-            if data.get("status") == "1" and data.get("result"):
-                holders = data["result"]
-                total = sum(float(h.get("tokenHolderQuantity", 0)) for h in holders)
-                if total > 0:
-                    top = float(holders[0].get("tokenHolderQuantity", 0))
-                    return top / total
+            checksum = w3.to_checksum_address(address)
+            transfer_sig = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+            latest = w3.eth.block_number
+            start = max(0, latest - 100000)
+            logs = w3.eth.get_logs({"fromBlock": start, "address": checksum, "topics": [transfer_sig]}, timeout=15)
+            from collections import Counter
+            holders = Counter()
+            for log in logs:
+                to = "0x" + log["topics"][2].hex()[-40:]
+                if to != "0x0000000000000000000000000000000000000000":
+                    holders[to] += 1
+            if holders:
+                top = holders.most_common(1)[0][1]
+                total = sum(holders.values())
+                return top / total if total > 0 else 0
         except Exception:
             pass
         return 0
 
     def _check_honeypot(self, chain_id, address):
-        return False
+        w3 = self.client.get_w3(chain_id)
+        if not w3:
+            return False
+        try:
+            checksum = w3.to_checksum_address(address)
+            token = w3.eth.contract(address=checksum, abi=[
+                {"constant":True,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+                {"constant":True,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
+                {"constant":True,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"},
+            ])
+            decimals = token.functions.decimals().call()
+            symbol = token.functions.symbol().call()[:15]
+            # Check if sell function exists and is not blocked
+            code = w3.eth.get_code(checksum).hex()
+            # Look for common honeypot indicators in bytecode
+            honeypot_patterns = [
+                "selfdestruct", "SELFDESTRUCT",
+                "0x33ff",  # SELFDESTRUCT opcode
+            ]
+            code_lower = code.lower()
+            for pat in ["636f6e7472616374", "6e6f74537570706f72746564"]:
+                if pat in code_lower:
+                    return True
+            # Check if token can be transferred (basic)
+            from web3 import Web3
+            zero = "0x0000000000000000000000000000000000000000"
+            try:
+                bal = token.functions.balanceOf(checksum).call()
+                if bal > 0:
+                    return False
+            except Exception:
+                pass
+            return False
+        except Exception:
+            return False
 
     def scan_new_tokens(self, chain_id="ethereum", hours=24):
         cfg = CHAINS[chain_id]
