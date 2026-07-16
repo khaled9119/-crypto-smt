@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐋 Crypto Smart Money Tracker Pro — Whales · Token Scanner · Smart Wallets</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e14;--card:#121820;--card2:#1a2430;--input:#1e2a38;--fg:#e6edf3;--dim:#6e7e94;--border:#1e2a38;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--cyan:#38bdf8;--orange:#fb923c;--purple:#a78bfa}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::selection{background:var(--cyan);color:#000}
+.container{max-width:1440px;margin:0 auto;padding:18px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 16px;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-left h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill:transparent}
+.header-left .version{font-size:10px;color:var(--dim);background:var(--card);padding:2px 8px;border-radius:4px;border:1px solid var(--border)}
+.prices{display:flex;gap:14px;font-size:12px;align-items:center}
+.prices .price-item{display:flex;align-items:center;gap:5px}
+.prices .price-item .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.prices .price-item .val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600}
+.price-up{color:var(--green)}.price-down{color:var(--red)}
+
+/* Nav */
+.nav{display:flex;gap:3px;margin-bottom:18px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:2px}
+.nav button{padding:10px 20px;border:none;background:transparent;color:var(--dim);border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;font-family:'Inter',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
+.nav button:hover{background:var(--card);color:var(--fg)}
+.nav button.active{background:var(--card);color:var(--cyan);border-bottom-color:var(--cyan)}
+
+/* Tabs */
+.tab{display:none;animation:fadeIn .3s ease}
+.tab.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Stats Grid */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--cyan)}
+.stat-card .label{font-size:11px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.stat-card .value{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.stat-card .sub{font-size:11px;color:var(--dim);margin-top:4px}
+.stat-card .icon{font-size:20px;margin-bottom:6px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:rgba(56,189,248,.2)}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-header .title{display:flex;align-items:center;gap:8px}
+.card-body{padding:16px 18px}
+
+/* Tables */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+th:hover{color:var(--cyan)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(56,189,248,.04)}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.badge.eth{background:rgba(56,189,248,.15);color:var(--cyan)}
+.badge.bsc{background:rgba(234,179,8,.15);color:var(--yellow)}
+.badge.base{background:rgba(130,71,229,.15);color:var(--purple)}
+.badge.low{background:rgba(34,197,94,.12);color:var(--green)}
+.badge.medium{background:rgba(234,179,8,.12);color:var(--yellow)}
+.badge.high{background:rgba(239,68,68,.12);color:var(--red)}
+
+/* Forms */
+input,select,textarea{padding:10px 14px;background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .2s;width:100%}
+input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
+::placeholder{color:var(--dim)}
+.form-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+
+/* Copyable Addresses */
+.addr{cursor:pointer;position:relative;transition:color .2s;border-bottom:1px dashed transparent}
+.addr:hover{color:var(--cyan)!important;border-bottom-color:var(--cyan)}
+.addr:hover::after{content:"📋";font-size:10px;margin-left:4px;opacity:.7}
+.addr.copied{color:var(--green)!important}
+.addr.copied:hover::after{content:"✅"}
+.tx-hash{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);cursor:pointer;transition:color .2s}
+.tx-hash:hover{color:var(--cyan)}
+
+/* Buttons */
+.btn{padding:9px 20px;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:var(--cyan);color:#000}.btn-primary:hover{opacity:.85;transform:translateY(-1px)}
+.btn-success{background:var(--green);color:#000}.btn-success:hover{opacity:.85;transform:translateY(-1px)}
+.btn-warning{background:var(--yellow);color:#000}.btn-warning:hover{opacity:.85}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.85}
+.btn-ghost{background:var(--input);color:var(--dim);border:1px solid var(--border)}.btn-ghost:hover{color:var(--fg);border-color:var(--cyan)}
+.btn-sm{padding:6px 14px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Chain Dots */
+.chain-status{display:flex;gap:12px;align-items:center}
+.chain-dot{display:flex;align-items:center;gap:4px;font-size:12px}
+.chain-dot .dot{width:7px;height:7px;border-radius:50%}
+.dot.on{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.4)}
+.dot.off{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,.4)}
+
+/* Result Box */
+.result-box{background:var(--input);border:1px solid var(--border);border-radius:10px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:450px;overflow-y:auto;margin-top:14px}
+.result-box .hl{color:var(--cyan)}.result-box .hlg{color:var(--green)}.result-box .hlr{color:var(--red)}.result-box .hly{color:var(--yellow)}
+
+/* Score Bar */
+.score-bar{display:flex;gap:2px;margin:6px 0}
+.score-bar .seg{height:14px;border-radius:2px;flex:1}
+.score-bar .seg.on{background:var(--green)}.score-bar .seg.warn{background:var(--yellow)}.score-bar .seg.danger{background:var(--red)}.score-bar .seg.off{background:var(--border)}
+
+/* Grid layouts */
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:1024px){.grid-2{grid-template-columns:1fr}}
+@media(max-width:768px){.grid-3{grid-template-columns:1fr}.header{flex-direction:column;align-items:start}}
+
+/* Whale popup */
+.whale-alert{position:fixed;top:20px;right:20px;background:var(--card);border:1px solid var(--cyan);border-radius:12px;padding:14px 20px;z-index:999;animation:slideIn .4s ease;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+@keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
+.whale-alert .wa-title{font-weight:700;font-size:13px;color:var(--cyan);margin-bottom:4px}
+.whale-alert .wa-detail{font-size:12px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+
+/* Empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--dim)}
+.empty-state .icon{font-size:40px;margin-bottom:10px}
+.empty-state p{font-size:14px}
+
+/* Loading spinner */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 22px;font-size:13px;z-index:999;animation:toastIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+@keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Scrollable lists */
+.scroll-list{max-height:320px;overflow-y:auto}
+.token-item{padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12px;cursor:pointer;transition:background .2s;border-radius:4px;padding:8px 10px;margin:0 -10px}
+.token-item:hover{background:var(--input)}
+
+/* Monitor indicator */
+.monitor-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+<div class="header-left">
+<h1>🐋 Crypto Smart Money Tracker</h1>
+<span class="version">PRO v2.0</span>
+</div>
+<div class="prices" id="prices"></div>
+</div>
+
+<div class="nav" id="nav">
+<button class="active" data-tab="dashboard">📊 Dashboard</button>
+<button data-tab="whales">🐋 Whales</button>
+<button data-tab="analyze">🔍 Token Scan</button>
+<button data-tab="wallets">👛 Smart Wallets</button>
+<button data-tab="settings">⚙️</button>
+</div>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="tab-dashboard" class="tab active">
+<div class="chain-status" style="margin-bottom:14px" id="chain-status"></div>
+<div class="stats" id="main-stats"></div>
+
+<div class="grid-2">
+<div class="card">
+<div class="card-header"><span class="title">🐋 Whale Activity (30m)</span><span id="whale-chart-time" style="font-size:11px;color:var(--dim)"></span></div>
+<div class="card-body"><canvas id="whaleChart" height="180"></canvas></div>
+</div>
+<div class="card">
+<div class="card-header"><span class="title">💰 Price Chart</span></div>
+<div class="card-body"><canvas id="priceChart" height="180"></canvas></div>
+</div>
+</div>
+
+<div class="grid-2">
+<div class="card">
+<div class="card-header"><span class="title">🐋 Latest Whale Moves</span> <button class="btn btn-ghost btn-sm" onclick="loadDashboardWhales()">⟳</button></div>
+<div class="card-body" style="padding:0">
+<div class="table-wrap"><table><thead><tr><th>Time</th><th>Chain</th><th>Amount</th><th>USD</th><th>From</th><th>To</th></tr></thead>
+<tbody id="dash-whales"></tbody></table></div>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="title">👛 Top Smart Wallets</span></div>
+<div class="card-body scroll-list" id="dash-wallets"><div class="empty-state"><p>No wallets tracked yet</p></div></div>
+</div>
+</div>
+</div>
+
+<!-- ==================== WHALES ==================== -->
+<div id="tab-whales" class="tab">
+<div class="card">
+<div class="card-header">
+<span class="title">🐋 All Whale Transactions</span>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<button class="btn btn-success btn-sm" onclick="startMonitor()" id="monBtn">▶ Monitor</button>
+<button class="btn btn-warning btn-sm" onclick="clearWhales()">🗑 Clear</button>
+<button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/whales')">📥 CSV</button>
+</div>
+</div>
+<div style="padding:8px 18px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;flex-wrap:wrap" id="whale-info">
+<span>Click column headers to sort</span>
+<span id="monitor-status">● Idle</span>
+</div>
+<div class="table-wrap"><table><thead><tr>
+<th onclick="sortTable('all-whales',0)">Time ▾</th>
+<th onclick="sortTable('all-whales',1)">Chain</th>
+<th onclick="sortTable('all-whales',2)">Amount</th>
+<th onclick="sortTable('all-whales',3)">USD Value ▾</th>
+<th onclick="sortTable('all-whales',4)">From</th>
+<th onclick="sortTable('all-whales',5)">To</th>
+<th>Tx</th>
+</tr></thead><tbody id="all-whales"></tbody></table></div>
+</div>
+</div>
+
+<!-- ==================== TOKEN SCAN ==================== -->
+<div id="tab-analyze" class="tab">
+<div class="grid-2">
+<div class="card">
+<div class="card-header"><span class="title">🔍 Token Risk Scanner</span></div>
+<div class="card-body">
+<div class="form-row">
+<div style="flex:3;min-width:200px"><input id="token-addr" placeholder="Token contract address 0x..."></div>
+<div style="flex:0 0 120px"><select id="token-chain"><option value="ethereum">Ethereum</option><option value="bsc">BSC</option><option value="base">Base</option></select></div>
+<button class="btn btn-primary" onclick="analyzeToken()" id="analyze-btn">🔍 Scan</button>
+</div>
+<div id="token-result"></div>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="title">📋 Scan History</span></div>
+<div class="card-body scroll-list" id="recent-tokens" style="padding:8px 16px"><div class="empty-state"><p>No tokens scanned yet</p></div></div>
+</div>
+</div>
+</div>
+
+<!-- ==================== SMART WALLETS ==================== -->
+<div id="tab-wallets" class="tab">
+<div class="card">
+<div class="card-header">
+<span class="title">👛 Smart Wallet Tracker</span>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<button class="btn btn-ghost btn-sm" onclick="loadWallets()">⟳ Refresh</button>
+<button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/wallets')">📥 CSV</button>
+</div>
+</div>
+<div class="card-body">
+<div class="form-row">
+<div style="flex:3;min-width:200px"><input id="wallet-addr" placeholder="Wallet address 0x..."></div>
+<button class="btn btn-success" onclick="trackWallet()" id="track-btn">👁 Track Wallet</button>
+</div>
+</div>
+<div class="table-wrap"><table><thead><tr>
+<th>Wallet</th><th>Chain</th><th>Trades</th><th>Profit</th><th>Win Rate</th><th>Top Tokens</th>
+</tr></thead><tbody id="wallet-table-body"></tbody></table></div>
+</div>
+</div>
+
+<!-- ==================== SETTINGS ==================== -->
+<div id="tab-settings" class="tab">
+<div class="grid-3">
+<div class="card">
+<div class="card-header"><span class="title">🌐 Connections</span></div>
+<div class="card-body" id="settings-chains"></div>
+</div>
+<div class="card">
+<div class="card-header"><span class="title">📊 System Stats</span></div>
+<div class="card-body" id="settings-stats"></div>
+</div>
+<div class="card">
+<div class="card-header"><span class="title">ℹ️ About</span></div>
+<div class="card-body" style="font-size:13px;line-height:1.8">
+<strong>Crypto Smart Money Tracker Pro</strong><br>
+<span style="color:var(--dim)">Version 2.0 — Web Edition</span><br><br>
+Track whale transactions, scan tokens for rug pulls,<br>
+and follow smart money wallets across<br>
+Ethereum · BSC · Base<br><br>
+<span style="font-size:11px;color:var(--dim)">Built with Flask · Chart.js · Web3.py</span>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<script>
+let monitoring = false;
+let monitorInterval;
+let whaleChart, priceChart;
+
+document.querySelectorAll("#nav button").forEach(b=>{
+    b.onclick=()=>{
+        document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+        b.classList.add("active");
+        document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+        document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+        const tabMap = {whales:"loadAllWhales", wallets:"loadWallets", dashboard:"loadStatus"};
+        if(tabMap[b.dataset.tab]) window[tabMap[b.dataset.tab]]();
+        if(b.dataset.tab==="analyze") loadRecentTokens();
+}});
+
+function toast(msg, color="var(--green)") {
+    const t=document.createElement("div");t.className="toast";t.textContent=msg;t.style.borderColor=color;
+    document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+
+async function api(url,opts={}){const r=await fetch(url,opts);return r.json()}
+
+// ======== STATUS ========
+async function loadStatus() {
+    try {
+        const d = await api("/api/status");
+        const phtml = Object.entries(d.prices||{}).map(([k,v])=>{
+            const sym = k==="ethereum"?"ETH":"BNB";
+            const prev = window[`_prev_${k}`];
+            const cls = prev !== undefined ? (v > prev ? "price-up" : v < prev ? "price-down" : "") : "";
+            window[`_prev_${k}`] = v;
+            return `<div class="price-item"><span class="dot" style="background:${cls.includes('up')?'var(--green)':cls.includes('down')?'var(--red)':'var(--dim)'}"></span>${sym} <span class="val ${cls}">$${v.toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>`;
+        }).join("");
+        document.getElementById("prices").innerHTML = phtml;
+
+        const ch = d.chains||{};
+        document.getElementById("chain-status").innerHTML = Object.entries(ch).map(([c,ok])=>
+            `<span class="chain-dot"><span class="dot ${ok?'on':'off'}"></span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>`
+        ).join("");
+
+        document.getElementById("main-stats").innerHTML = `
+            <div class="stat-card"><div class="icon">🐋</div><div class="label">Whales Detected</div><div class="value" style="color:var(--cyan)">${d.whales}</div><div class="sub">All time</div></div>
+            <div class="stat-card"><div class="icon">💰</div><div class="label">Total Volume</div><div class="value" style="color:var(--green)">$${(d.volume||0).toLocaleString()}</div><div class="sub">Across all chains</div></div>
+            <div class="stat-card"><div class="icon">👛</div><div class="label">Smart Wallets</div><div class="value" style="color:var(--yellow)">${d.wallets}</div><div class="sub">Tracked</div></div>
+            <div class="stat-card"><div class="icon">📊</div><div class="label">Chains</div><div class="value" style="font-size:20px">${Object.values(ch).filter(Boolean).length}/3</div><div class="sub">${Object.entries(ch).map(([c,ok])=>`${c.slice(0,3).toUpperCase()}`).join(" · ")}</div></div>
+        `;
+
+        if(d.chart && whaleChart) {
+            const vols = d.chart.volume || [];
+            const cnts = d.chart.counts || [];
+            const labels = vols.map((_,i)=>`-${(vols.length-i)*0.5}m`);
+            whaleChart.data.labels = labels;
+            whaleChart.data.datasets[0].data = vols;
+            whaleChart.data.datasets[1].data = cnts;
+            whaleChart.update('none');
+        }
+        if(d.chart && priceChart) {
+            const pe = d.chart.price_eth || [];
+            const pb = d.chart.price_bnb || [];
+            const maxLen = Math.max(pe.length, pb.length);
+            const plabels = Array.from({length:maxLen},(_,i)=>i);
+            priceChart.data.labels = plabels;
+            priceChart.data.datasets[0].data = pe;
+            priceChart.data.datasets[1].data = pb;
+            priceChart.update('none');
+        }
+    } catch(e){}
+}
+
+// ======== WHALES ========
+async function loadDashboardWhales() {
+    try {
+        const w = await api("/api/whales?limit=6");
+        document.getElementById("dash-whales").innerHTML = w.length ? w.map(x=>`<tr>
+            <td style="font-size:11px">${(x.timestamp||"").slice(5,16)||"?"}</td>
+            <td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
+            <td>${(x.value||0).toFixed(2)} ${x.symbol||""}</td>
+            <td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
+            <td><span class="addr" onclick="copyText('${x.from_addr||""}')" title="Click to copy">${(x.from_addr||"").slice(0,10)}..</span></td>
+            <td><span class="addr" onclick="copyText('${x.to_addr||""}')" title="Click to copy">${(x.to_addr||"").slice(0,10)}..</span></td>
+        </tr>`).join("") : '<tr><td colspan="6"><div class="empty-state"><p>No whale moves yet — start monitoring!</p></div></td></tr>';
+    } catch(e){}
+}
+
+async function loadAllWhales() {
+    try {
+        const w = await api("/api/whales?limit=100");
+        document.getElementById("all-whales").innerHTML = w.length ? w.map(x=>`<tr>
+            <td style="font-size:11px">${(x.timestamp||"").slice(5,19)||"?"}</td>
+            <td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
+            <td>${(x.value||0).toFixed(4)} ${x.symbol||""}</td>
+            <td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
+            <td><span class="addr" onclick="copyText('${x.from_addr||""}')" title="Click to copy">${(x.from_addr||"").slice(0,12)}..</span></td>
+            <td><span class="addr" onclick="copyText('${x.to_addr||""}')" title="Click to copy">${(x.to_addr||"").slice(0,12)}..</span></td>
+            <td><span class="tx-hash" onclick="copyText('${x.hash||""}')" title="Click to copy hash">${(x.hash||"").slice(0,12)}..</span></td>
+        </tr>`).join("") : '<tr><td colspan="7"><div class="empty-state"><p>No transactions yet</p></div></td></tr>';
+    } catch(e){}
+}
+
+async function clearWhales() {
+    await api("/api/whales/clear",{method:"POST"});
+    loadAllWhales(); loadDashboardWhales(); loadStatus();
+    toast("Whale data cleared");
+}
+
+function startMonitor() {
+    monitoring = !monitoring;
+    if(monitoring) {
+        document.getElementById("monBtn").textContent = "⏹ Stop";
+        document.getElementById("monBtn").className = "btn btn-danger btn-sm";
+        document.getElementById("monitor-status").innerHTML = '<span class="monitor-dot" style="background:var(--green)"></span> Live';
+        monitorInterval = setInterval(()=>{loadAllWhales();loadStatus()}, 5000);
+        toast("Live monitoring started");
+    } else {
+        document.getElementById("monBtn").textContent = "▶ Monitor";
+        document.getElementById("monBtn").className = "btn btn-success btn-sm";
+        document.getElementById("monitor-status").textContent = "● Idle";
+        clearInterval(monitorInterval);
+        toast("Monitoring stopped","var(--yellow)");
+    }
+}
+
+// ======== TOKEN ANALYSIS ========
+async function analyzeToken() {
+    const addr = document.getElementById("token-addr").value.trim();
+    const chain = document.getElementById("token-chain").value;
+    if(!addr.startsWith("0x")||addr.length<42) return toast("Invalid token address","var(--red)");
+    const btn = document.getElementById("analyze-btn");
+    btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Scanning...';
+    document.getElementById("token-result").innerHTML = "";
+    try {
+        const r = await api("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr,chain})});
+        if(r.error){toast(r.error,"var(--red)");btn.disabled=false;btn.innerHTML="🔍 Scan";return}
+        const colors = {low:"var(--green)",medium:"var(--yellow)",high:"var(--red)"};
+        const c = colors[r.risk]||"var(--dim)";
+        const sb = Array.from({length:20},(_,i)=>{
+            const s = (r.score||50);
+            if(i < s/5) return `<div class="seg on"></div>`;
+            return `<div class="seg off"></div>`;
+        }).join("");
+        let html = `<div class="result-box" style="border-left:3px solid ${c}">`;
+        html += `<span class="hl">TOKEN</span>  ${r.name||"?"} (<span class="hlg">${r.symbol||"?"}</span>)\n`;
+        html += `<span class="hl">ADDR</span>   ${addr.slice(0,24)}...\n`;
+        html += `<span class="hl">CHAIN</span>  ${chain.charAt(0).toUpperCase()+chain.slice(1)}\n`;
+        html += `─".repeat(50)}\n\n`;
+        html += `<span class="hl">RISK</span>      <span style="color:${c};font-weight:700">${r.risk.toUpperCase()}</span>\n`;
+        html += `<span class="hl">SCORE</span>     ${r.score}/100\n<div class="score-bar">${sb}</div>\n`;
+        html += `<span class="hl">OWNER</span>     ${r.ownership_renounced ? 'Renounced ✅' : 'NOT Renounced ❌'}\n`;
+        if(r.liquidity_usd) html += `<span class="hl">LIQ</span>       $${Number(r.liquidity_usd).toLocaleString()}\n`;
+        if(r.top_holder_pct) html += `<span class="hl">HOLDER</span>    Top: ${(r.top_holder_pct*100).toFixed(1)}%\n`;
+        if(r.total_supply) html += `<span class="hl">SUPPLY</span>    ${Number(r.total_supply).toLocaleString()}\n`;
+        if(r.honeypot) html += `\n🚨 <span class="hlr">HONEYPOT DETECTED</span> 🚨\n`;
+        if(r.issues&&r.issues.length) { html+=`\n⚠ ISSUES:\n`; r.issues.forEach(i=>html+=`  • <span class="hlr">${i}</span>\n`); }
+        if(r.risk==="low"&&(!r.issues||!r.issues.length)) html+=`\n✅ <span class="hlg">Token appears safe</span>\n`;
+        html += `\n${"=".repeat(50)}</div>`;
+        document.getElementById("token-result").innerHTML = html;
+        loadRecentTokens(); toast("Analysis complete");
+    } catch(e){toast("Error","var(--red)")}
+    btn.disabled=false; btn.innerHTML="🔍 Scan";
+}
+
+async function loadRecentTokens() {
+    try {
+        const t = await api("/api/tokens/recent");
+        const el=document.getElementById("recent-tokens");
+        if(!t.length){el.innerHTML='<div class="empty-state"><p>No tokens scanned yet</p></div>';return}
+        el.innerHTML=t.map(x=>`<div class="token-item" onclick="document.getElementById('token-addr').value='${x.address}';document.querySelector('[data-tab=analyze]').click()">
+            <span>${x.symbol||"?"} <span style="color:var(--dim)">${(x.address||"").slice(0,14)}..</span></span>
+            <span class="badge ${x.risk||'medium'}">${(x.risk||"?").toUpperCase()} ${x.score||0}</span>
+        </div>`).join("");
+    } catch(e){}
+}
+
+// ======== WALLETS ========
+async function loadWallets() {
+    try {
+        const w = await api("/api/wallets");
+        const tbody = document.getElementById("wallet-table-body");
+        tbody.innerHTML = w.length ? w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).map(x=>`<tr>
+            <td><span class="addr" onclick="copyText('${x.wallet||""}')" title="Click to copy">${(x.wallet||"").slice(0,12)}..${(x.wallet||"").slice(-4)}</span></td>
+            <td>${x.chain||"?"}</td>
+            <td>${x.total_trades||0}</td>
+            <td style="color:var(--green);font-weight:600">$${(x.estimated_profit_usd||0).toLocaleString()}</td>
+            <td>${((x.win_rate||0)*100).toFixed(0)}%</td>
+            <td style="font-size:11px;color:var(--dim)">${(x.tokens_traded||[]).slice(0,4).join(", ")}</td>
+        </tr>`).join("") : '<tr><td colspan="6"><div class="empty-state"><p>No wallets tracked — add one above!</p></div></td></tr>';
+
+        // Update dashboard
+        const dw = document.getElementById("dash-wallets");
+        if(w.length) {
+            dw.innerHTML = w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).slice(0,5).map(x=>`
+                <div class="token-item"><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}..<span style="color:var(--dim)"> ${x.chain||""}</span></span>
+                <span style="color:var(--green);font-family:JetBrains Mono">$${(x.estimated_profit_usd||0).toLocaleString()}</span></div>
+            `).join("");
+        } else { dw.innerHTML = '<div class="empty-state"><p>No wallets tracked yet</p></div>'; }
+    } catch(e){}
+}
+
+async function trackWallet() {
+    const addr=document.getElementById("wallet-addr").value.trim();
+    if(!addr.startsWith("0x")) return toast("Invalid address","var(--red)");
+    const btn=document.getElementById("track-btn");
+    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Tracking...';
+    const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr})});
+    if(r.status==="ok"){toast(r.message);setTimeout(loadWallets,3000)}
+    else toast(r.error||"Error","var(--red)");
+    btn.disabled=false;btn.innerHTML="👁 Track Wallet";
+}
+
+// ======== SETTINGS ========
+async function loadSettings() {
+    try {
+        const d = await api("/api/status");
+        const ch = d.chains||{};
+        document.getElementById("settings-chains").innerHTML = Object.entries(ch).map(([c,ok])=>`
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+                <span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>
+                <span style="color:${ok?'var(--green)':'var(--red)'}">${ok ? '● Connected' : '○ Disconnected'}</span>
+            </div>
+        `).join("");
+        document.getElementById("settings-stats").innerHTML = `
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+                <span>🐋 Whales</span><span style="font-family:JetBrains Mono">${d.whales}</span></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+                <span>💰 Volume</span><span style="font-family:JetBrains Mono;color:var(--green)">$${(d.volume||0).toLocaleString()}</span></div>
+            <div style="padding:8px 0;display:flex;justify-content:space-between">
+                <span>👛 Wallets</span><span style="font-family:JetBrains Mono">${d.wallets}</span></div>
+        `;
+    } catch(e){}
+}
+
+function sortTable(id, col) {
+    const tbody=document.getElementById(id);
+    const rows=Array.from(tbody.querySelectorAll("tr"));
+    const idx=col;
+    rows.sort((a,b)=>{
+        const va=a.cells[idx]?.textContent.trim()||"", vb=b.cells[idx]?.textContent.trim()||"";
+        const na=parseFloat(va.replace(/[$,]/g,"")), nb=parseFloat(vb.replace(/[$,]/g,""));
+        if(!isNaN(na)&&!isNaN(nb)) return nb-na;
+        return vb.localeCompare(va);
+    });
+    rows.forEach(r=>tbody.appendChild(r));
+}
+
+// ======== CHARTS ========
+function initCharts() {
+    const ctx1 = document.getElementById("whaleChart")?.getContext("2d");
+    if(ctx1) {
+        whaleChart = new Chart(ctx1, {
+            type: "bar",
+            data: {labels:[], datasets:[
+                {label:"Volume (USD)", data:[], backgroundColor:"rgba(56,189,248,.5)", borderRadius:4, yAxisID:"y"},
+                {label:"Count", data:[], backgroundColor:"rgba(34,197,94,.4)", borderRadius:4, yAxisID:"y1"}
+            ]},
+            options: {
+                responsive:true, maintainAspectRatio:false,
+                plugins:{legend:{labels:{color:"#6e7e94",font:{size:10}}}},
+                scales:{
+                    x:{grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:9}}},
+                    y:{beginAtZero:true,grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:9},callback:v=>"$"+v.toLocaleString()}},
+                    y1:{beginAtZero:true,position:"right",grid:{display:false},ticks:{color:"#6e7e94",font:{size:9}}}
+                }
+            }
+        });
+    }
+
+    const ctx2 = document.getElementById("priceChart")?.getContext("2d");
+    if(ctx2) {
+        priceChart = new Chart(ctx2, {
+            type: "line",
+            data: {labels:[], datasets:[
+                {label:"ETH", data:[], borderColor:"#38bdf8", backgroundColor:"rgba(56,189,248,.1)", fill:true, tension:.3, pointRadius:0, borderWidth:2},
+                {label:"BNB", data:[], borderColor:"#eab308", backgroundColor:"rgba(234,179,8,.1)", fill:true, tension:.3, pointRadius:0, borderWidth:2}
+            ]},
+            options: {
+                responsive:true, maintainAspectRatio:false,
+                plugins:{legend:{labels:{color:"#6e7e94",font:{size:10}}}},
+                scales:{
+                    x:{grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:8},display:false}},
+                    y:{grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:9},callback:v=>"$"+v.toLocaleString()}}
+                }
+            }
+        });
+    }
+}
+
+// ======== INIT ========
+initCharts();
+loadStatus(); loadDashboardWhales(); loadWallets(); loadSettings();
+
+// ======== COPY TO CLIPBOARD ========
+function copyText(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const el = event.target;
+        el.classList.add("copied");
+        toast("Copied: " + text.slice(0, 16) + "...");
+        setTimeout(() => el.classList.remove("copied"), 1500);
+    }).catch(() => {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+        toast("Copied!");
+    });
+}
+
+// Auto-refresh
+setInterval(()=>{if(!monitoring)loadStatus()}, 15000);
+setInterval(()=>{if(!monitoring)loadDashboardWhales()}, 20000);
+</script>
+</body>
+</html>
