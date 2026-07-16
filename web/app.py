@@ -522,18 +522,20 @@ def api_binance_markets():
             r = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=volume_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h", timeout=10)
             if r.status_code == 200:
                 coins = r.json()
+                all_coins = []
                 for c in coins:
                     chg = c.get("price_change_percentage_24h") or 0
                     vol = c.get("total_volume") or 0
                     p = c.get("current_price") or 0
-                    result["gainers"].append({
+                    all_coins.append({
                         "symbol": c.get("symbol", "").upper(), "price": p,
                         "change_24h": round(chg, 2), "volume": vol,
                         "name": c.get("name", ""), "image": c.get("image", ""),
                     })
-                result["gainers"].sort(key=lambda x: x["change_24h"], reverse=True)
-                result["gainers"] = [c for c in result["gainers"] if c["change_24h"] > 0][:20]
-                result["losers"] = sorted(result["gainers"], key=lambda x: x["change_24h"])[:15] if result["gainers"] else []
+                all_coins.sort(key=lambda x: x["change_24h"], reverse=True)
+                result["gainers"] = [c for c in all_coins if c["change_24h"] > 0][:20]
+                losers_sorted = sorted(all_coins, key=lambda x: x["change_24h"])
+                result["losers"] = [c for c in losers_sorted if c["change_24h"] < 0][:15]
                 for c in coins:
                     vol = c.get("total_volume") or 0
                     p = c.get("current_price") or 0
