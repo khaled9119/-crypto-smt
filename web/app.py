@@ -306,6 +306,86 @@ def api_token_advanced():
         return jsonify({"error": str(e)}), 500
 
 
+# ===== GAS PRICES =====
+
+GAS_CACHE = {}
+GAS_CACHE_TIME = 0
+
+@ app.route("/api/gas")
+def api_gas():
+    global GAS_CACHE, GAS_CACHE_TIME
+    now = time.time()
+    if now - GAS_CACHE_TIME < 15 and GAS_CACHE:
+        return jsonify(GAS_CACHE)
+    result = {}
+    for chain_id in ["ethereum", "bsc", "base"]:
+        w3 = client.get_w3(chain_id)
+        if not w3:
+            result[chain_id] = None
+            continue
+        try:
+            fee = w3.eth.fee_history(1, "latest")
+            base_fee = fee.get("baseFeePerGas", [0])[0] if fee.get("baseFeePerGas") else 0
+            # Get priority fees
+            pending = w3.eth.get_block("pending")
+            tx_count = len(pending.get("transactions", []))
+            result[chain_id] = {
+                "base_fee_gwei": round(base_fee / 1e9, 2),
+                "pending_tx": tx_count,
+                "gas_price_gwei": round(w3.eth.gas_price / 1e9, 2),
+            }
+        except Exception:
+            try:
+                gp = w3.eth.gas_price
+                result[chain_id] = {
+                    "base_fee_gwei": round(gp / 1e9, 2),
+                    "pending_tx": 0,
+                    "gas_price_gwei": round(gp / 1e9, 2),
+                }
+            except Exception:
+                result[chain_id] = None
+    GAS_CACHE = result
+    GAS_CACHE_TIME = now
+    return jsonify(result)
+
+# ===== BALANCE CHECKER =====
+
+@ app.route("/api/balance", methods=["POST"])
+def api_balance():
+    data = request.get_json()
+    addr = data.get("address", "").strip()
+    if not addr or not is_valid_address(addr):
+        return jsonify({"error": "Invalid address"}), 400
+    result = {}
+    for chain_id in ["ethereum", "bsc", "base"]:
+        w3 = client.get_w3(chain_id)
+        if not w3:
+            result[chain_id] = None
+            continue
+        try:
+            bal = w3.eth.get_balance(w3.to_checksum_address(addr))
+            native = bal / 1e18
+            price = get_usd_price(CHAINS[chain_id]["native_usd"])
+            result[chain_id] = {
+                "balance": round(native, 6),
+                "usd": round(native * price, 2) if price else 0,
+                "symbol": CHAINS[chain_id]["symbol"],
+            }
+        except Exception:
+            try:
+                bal = w3.eth.get_balance(addr)
+                native = bal / 1e18
+                price = get_usd_price(CHAINS[chain_id]["native_usd"])
+                result[chain_id] = {
+                    "balance": round(native, 6),
+                    "usd": round(native * price, 2) if price else 0,
+                    "symbol": CHAINS[chain_id]["symbol"],
+                }
+            except Exception:
+                result[chain_id] = None
+    return jsonify(result)
+
+
 def main():
     import sys
     if hasattr(sys.stdout, 'reconfigure'):
