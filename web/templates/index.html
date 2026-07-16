@@ -689,8 +689,8 @@ document.getElementById("settingsChains").innerHTML=Object.entries(chains).map((
 <div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center;font-size:11px">
 <span>Etherscan API</span><span style="color:${aks.etherscan?'var(--green)':'var(--yellow)'}">${aks.etherscan?'✅ Active':'⚠ Missing'}</span></div>
 <div style="padding:6px 0 0;display:flex;justify-content:space-between;align-items:center;font-size:11px">
-<span>BSCScan API</span><span style="color:${aks.bscscan?'var(--green)':'var(--yellow)'}">${aks.bscscan?'✅ Active':'⚠ Missing'}</span></div>
-<div style="padding:6px 0 0;font-size:10px;color:var(--dim)">Without BSCScan API, BSC wallet data uses slow RPC fallback</div>`;
+<span>BSCScan API</span><span style="color:${aks.bscscan?'var(--green)':'var(--yellow)'}">${aks.bscscan?'✅ Active':aks.bsc_via_etherscan?'🔄 Via Etherscan V2':'⚠ Missing'}</span></div>
+${aks.bsc_via_etherscan?'<div style="padding:6px 0 0;font-size:10px;color:var(--green)">BSC + Base data via Etherscan API V2 ✅</div>':'<div style="padding:6px 0 0;font-size:10px;color:var(--dim)">Without BSCScan API, BSC uses slow RPC fallback</div>'}`;
 document.getElementById("settingsStats").innerHTML=`
 <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>🐋 Whales</span><span style="font-family:var(--mono)">${d.whales}</span></div>
 <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>💰 Volume</span><span style="font-family:var(--mono);color:var(--green)">$${(d.volume||0).toLocaleString()}</span></div>

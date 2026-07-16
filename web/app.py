@@ -88,6 +88,7 @@ def api_status():
         "api_keys": {
             "etherscan": bool(ETHERSCAN_API_KEY),
             "bscscan": bool(BSCSCAN_API_KEY),
+            "bsc_via_etherscan": bool(ETHERSCAN_API_KEY and not BSCSCAN_API_KEY),
         },
     })
 
