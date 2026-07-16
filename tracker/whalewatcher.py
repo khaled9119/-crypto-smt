@@ -5,6 +5,7 @@ from colorama import Fore, Style
 
 from tracker.blockchain import Web3Client, explore_tx, get_usd_price, CHAINS
 from database.db import Database
+from tracker.notifier import send as send_alert
 from config import WHALE_THRESHOLD_USD, REFRESH_INTERVAL
 
 
@@ -70,6 +71,7 @@ class WhaleWatcher:
                     "symbol": symbol,
                     "timestamp": datetime.now().isoformat(),
                 })
+                send_alert(tx_data["chain"], symbol, tx_data["value"], tx_data["usd_value"], tx_data["from"], tx_data["to"], tx_data["hash"])
         except Exception:
             pass
 

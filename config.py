@@ -2,7 +2,7 @@ ETH_RPC = "https://eth.drpc.org"
 BSC_RPC = "https://bsc-dataseed1.binance.org"
 BASE_RPC = "https://mainnet.base.org"
 
-ETHERSCAN_API_KEY = ""
+ETHERSCAN_API_KEY = "IYZKU9UZJIMZDGQS4A47SJGGIN172JRR4I"
 BSCSCAN_API_KEY = ""
 
 WHALE_THRESHOLD_USD = 100000

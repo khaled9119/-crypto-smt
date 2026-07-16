@@ -14,8 +14,10 @@ from tracker.blockchain import Web3Client, get_usd_price, CHAINS
 from tracker.tokenanalyzer import TokenAnalyzer
 from tracker.whalewatcher import WhaleWatcher
 from tracker.smartwallet import SmartWalletTracker
+from tracker.notifier import load_config as load_tg_config, save_config as save_tg_config, send as test_tg
 from database.db import Database
 from utils.helpers import is_valid_address, format_usd
+from config import ALERTS
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.urandom(16).hex()
@@ -204,6 +206,101 @@ def api_export_wallets():
                      ",".join(w.get("tokens_traded",[])), w.get("last_active","")])
     return Response(si.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment;filename=smart_wallets.csv"})
+
+# ===== TELEGRAM NOTIFICATIONS =====
+
+@ app.route("/api/telegram/config")
+def api_tg_config():
+    token, chat_id = load_tg_config()
+    return jsonify({"bot_token": token, "chat_id": chat_id, "enabled": bool(token and chat_id)})
+
+@ app.route("/api/telegram/config", methods=["POST"])
+def api_tg_save():
+    data = request.get_json()
+    token = data.get("bot_token", "").strip()
+    chat_id = data.get("chat_id", "").strip()
+    save_tg_config(token, chat_id)
+    return jsonify({"status": "ok", "enabled": bool(token and chat_id)})
+
+@ app.route("/api/telegram/test", methods=["POST"])
+def api_tg_test():
+    token, chat_id = load_tg_config()
+    if not token or not chat_id:
+        result = test_tg("Test", "TEST", 1, 1, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000")
+        return jsonify({"status": "error", "message": "Telegram not configured"}), 400
+    try:
+        import requests as r
+        resp = r.post(f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": chat_id, "text": "✅ *Crypto Tracker*\nTest notification works!\nChain: Ethereum\nValue: 100 ETH\nUSD: $192,000", "parse_mode": "Markdown"}, timeout=8)
+        if resp.status_code == 200:
+            return jsonify({"status": "ok", "message": "Test sent successfully!"})
+        return jsonify({"status": "error", "message": resp.json().get("description", "Failed")}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ===== ENHANCED TOKEN ANALYSIS =====
+
+@ app.route("/api/token/advanced", methods=["POST"])
+def api_token_advanced():
+    data = request.get_json()
+    addr = data.get("address", "").strip()
+    chain = data.get("chain", "ethereum")
+    if not addr or not is_valid_address(addr):
+        return jsonify({"error": "Invalid address"}), 400
+    try:
+        w3 = client.get_w3(chain)
+        if not w3:
+            return jsonify({"error": "Chain not connected"}), 503
+        checksum = w3.to_checksum_address(addr)
+        token = w3.eth.contract(address=checksum, abi=[
+            {"constant": True, "inputs": [], "name": "name", "outputs": [{"name":"","type":"string"}], "type":"function"},
+            {"constant": True, "inputs": [], "name": "symbol", "outputs": [{"name":"","type":"string"}], "type":"function"},
+            {"constant": True, "inputs": [], "name": "decimals", "outputs": [{"name":"","type":"uint8"}], "type":"function"},
+            {"constant": True, "inputs": [], "name": "totalSupply", "outputs": [{"name":"","type":"uint256"}], "type":"function"},
+        ])
+        name = token.functions.name().call()[:40]
+        symbol = token.functions.symbol().call()[:20]
+        decimals = token.functions.decimals().call()
+        total_supply = token.functions.totalSupply().call() / 10 ** decimals
+        chain_name = {"ethereum": "Ethereum", "bsc": "BSC", "base": "Base"}.get(chain, chain)
+
+        # Get recent transfers (last 20)
+        from_block = max(0, w3.eth.block_number - 50000)
+        transfer_sig = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+        logs = []
+        try:
+            logs = w3.eth.get_logs({"address": checksum, "fromBlock": from_block, "topics": [transfer_sig]}, timeout=10)[:20]
+        except Exception:
+            pass
+
+        recent_txns = []
+        for log in logs:
+            from_h = "0x" + log["topics"][1].hex()[-40:]
+            to_h = "0x" + log["topics"][2].hex()[-40:]
+            val = int.from_bytes(log["data"], "big") / 10 ** decimals if log["data"] else 0
+            recent_txns.append({
+                "from": from_h, "to": to_h, "value": round(val, 4), "hash": log["transactionHash"].hex(),
+                "block": log["blockNumber"]
+            })
+
+        # Price and liquidity
+        price = 0
+        liquidity = 0
+        try:
+            from tracker.blockchain import get_token_price
+            price = get_token_price(addr, chain)
+        except Exception:
+            pass
+
+        return jsonify({
+            "name": name, "symbol": symbol, "decimals": decimals,
+            "total_supply": total_supply, "chain": chain_name,
+            "price_usd": price, "recent_txns": recent_txns[:10],
+            "address": checksum
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 def main():
     import sys

@@ -239,6 +239,7 @@ input::placeholder{color:var(--dim)}
 <button data-tab="analyze"><span class="icon">🔍</span> Token Scan</button>
 <button data-tab="wallets"><span class="icon">👛</span> Smart Wallets</button>
 <div class="nav-label">System</div>
+<button data-tab="alerts"><span class="icon">🔔</span> Notifications</button>
 <button data-tab="settings"><span class="icon">⚙️</span> Settings</button>
 </nav>
 <div class="sidebar-footer">
@@ -327,6 +328,7 @@ input::placeholder{color:var(--dim)}
 <div style="flex:3;min-width:200px"><input id="tokenAddr" placeholder="0x... token address"></div>
 <div style="flex:0 0 120px"><select id="tokenChain"><option value="ethereum">Ethereum</option><option value="bsc">BSC</option><option value="base">Base</option></select></div>
 <button class="btn btn-primary" onclick="analyzeToken()" id="analyzeBtn">🔍 Scan</button>
+<button class="btn btn-ghost" onclick="advancedToken()" id="advBtn">📊 Advanced</button>
 </div>
 <div id="tokenResult"></div>
 </div>
@@ -359,9 +361,52 @@ input::placeholder{color:var(--dim)}
 </div>
 </div>
 
+<!-- ALERTS / TELEGRAM -->
+<div id="tab-alerts" class="tab">
+<div class="grid-2">
+<div class="card">
+<div class="card-header"><span class="card-title">🔔 Telegram Bot</span></div>
+<div class="card-body">
+<div style="margin-bottom:14px;font-size:13px;color:var(--fg2);line-height:1.7">
+Get instant whale alerts on your phone via Telegram.<br>
+1. Create a bot via <a href="https://t.me/BotFather" target="_blank" style="color:var(--cyan)">@BotFather</a> and copy the token<br>
+2. Message your bot, then visit <a href="https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates" target="_blank" style="color:var(--cyan)">getUpdates</a> to find your Chat ID<br>
+3. Enter both below and click <strong>Save</strong>
+</div>
+<div id="tgStatus" style="margin-bottom:12px;display:none"></div>
+<div class="form-row" style="margin-bottom:10px">
+<div style="flex:2;min-width:200px"><input id="tgToken" placeholder="Bot Token: 123456:ABC-DEF..."></div>
+</div>
+<div class="form-row" style="margin-bottom:14px">
+<div style="flex:1;min-width:120px"><input id="tgChatId" placeholder="Chat ID: -1001234567890"></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-primary" onclick="saveTelegram()">💾 Save</button>
+<button class="btn btn-ghost" onclick="testTelegram()">📨 Test</button>
+<button class="btn btn-ghost" onclick="loadTelegram()">⟳ Load</button>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><span class="card-title">📋 Event Log</span></div>
+<div class="card-body" style="font-size:12px;color:var(--fg2);line-height:1.8">
+When a whale transaction is detected and Telegram is configured,<br>
+a message will be sent with:
+<ul style="margin:8px 0 0 18px">
+<li>🐋 Whale Alert title</li>
+<li>Chain (Ethereum / BSC / Base)</li>
+<li>Amount + USD value</li>
+<li>From / To addresses (shortened)</li>
+<li>Link to block explorer</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
 <!-- SETTINGS -->
 <div id="tab-settings" class="tab">
-<div class="grid-3">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
 <div class="card">
 <div class="card-header"><span class="card-title">🌐 Networks</span></div>
 <div class="card-body" id="settingsChains" style="font-size:13px"></div>
@@ -403,7 +448,7 @@ const tab=document.getElementById("tab-"+b.dataset.tab);
 if(tab){tab.classList.add("active")}
 // Update header title
 document.querySelector(".header-left div:last-child").textContent=b.textContent.trim().replace(/^\S+\s*/,'');
-const m={whales:"loadAllWhales",wallets:"loadWallets",dashboard:"loadStatus"};
+const m={whales:"loadAllWhales",wallets:"loadWallets",dashboard:"loadStatus",alerts:"loadTelegram"};
 if(m[b.dataset.tab]) window[m[b.dataset.tab]]();
 if(b.dataset.tab==="analyze") loadRecentTokens();
 if(window.innerWidth<=768) toggleSidebar();
@@ -582,6 +627,45 @@ document.getElementById("settingsStats").innerHTML=`
 <div style="padding:10px 0;display:flex;justify-content:space-between"><span>👛 Wallets</span><span style="font-family:var(--mono)">${d.wallets}</span></div>`;
 }catch(e){}}
 
+// === TELEGRAM ===
+async function loadTelegram(){
+try{
+const r=await api("/api/telegram/config");
+document.getElementById("tgToken").value=r.bot_token||"";
+document.getElementById("tgChatId").value=r.chat_id||"";
+const st=document.getElementById("tgStatus");
+if(r.enabled){st.style.display="block";st.style.borderLeft="3px solid var(--green)";st.innerHTML='✅ <strong>Telegram connected</strong> — alerts will be sent on new whales';st.style.padding="10px 14px";st.style.background="rgba(34,197,94,.08)";st.style.borderRadius="8px"}
+else{st.style.display="block";st.style.borderLeft="3px solid var(--yellow)";st.innerHTML='⚠️ Telegram <strong>not configured</strong> — enter token and chat ID';st.style.padding="10px 14px";st.style.background="rgba(234,179,8,.08)";st.style.borderRadius="8px"}
+}catch(e){}}
+async function saveTelegram(){
+const token=document.getElementById("tgToken").value.trim(),chat=document.getElementById("tgChatId").value.trim();
+if(!token||!chat) return toast("Enter both token and chat ID","var(--red)");
+const r=await api("/api/telegram/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({bot_token:token,chat_id:chat})});
+if(r.status==="ok"){toast("Saved! Alerts: "+(r.enabled?"ON":"OFF"));loadTelegram()}else toast("Error","var(--red)");
+}
+async function testTelegram(){
+const r=await api("/api/telegram/test",{method:"POST"});
+if(r.status==="ok"){toast(r.message)}else{toast(r.message||"Error — check token","var(--red)")}}
+
+// === ENHANCED TOKEN ===
+async function advancedToken(){
+const a=document.getElementById("tokenAddr").value.trim(),ch=document.getElementById("tokenChain").value;
+if(!a.startsWith("0x")||a.length<42) return toast("Invalid address","var(--red)");
+try{
+const r=await api("/api/token/advanced",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:a,chain:ch})});
+if(r.error){toast(r.error,"var(--red)");return}
+let h=`<div class="result-box" style="margin-top:8px">`;
+h+=`📊 <strong>${r.name}</strong> (<span style="color:var(--cyan)">${r.symbol}</span>) — ${r.chain}\n`;
+h+=`Price: ${r.price_usd?`<span style="color:var(--green)">$${r.price_usd.toFixed(8)}</span>`:'<span style="color:var(--dim)">N/A</span>'}\n`;
+h+=`Supply: ${r.total_supply?.toLocaleString()||'?'}\n`;
+h+=`Decimals: ${r.decimals}\n`;
+if(r.recent_txns?.length){h+=`\n🔄 Recent transfers:\n`;r.recent_txns.slice(0,5).forEach(t=>{
+h+=`  ${t.from.slice(0,8)}.. → ${t.to.slice(0,8)}..  ${t.value} ${r.symbol}\n`})}
+h+=`<br><span style="font-size:10px;color:var(--dim)">More details: /api/token/advanced</span></div>`;
+const existing=document.getElementById("tokenResult"),html=existing?existing.innerHTML:'';
+document.getElementById("tokenResult").innerHTML=html+h;
+}catch(e){toast("Error fetching details","var(--red)")}}
+
 // === SORT ===
 let sortState={};
 function sortTable(id,col){
@@ -648,7 +732,7 @@ requestAnimationFrame(anim)}
 initParticles()}
 
 // === INIT ===
-initCharts();loadHeader();loadStatus();loadDashboardWhales();loadWallets();loadSettings();
+initCharts();loadHeader();loadStatus();loadDashboardWhales();loadWallets();loadSettings();loadTelegram();
 setInterval(()=>{if(!monitoring)loadStatus()},15000);
 setInterval(()=>{if(!monitoring)loadDashboardWhales()},20000);
 setInterval(loadHeader,10000);
