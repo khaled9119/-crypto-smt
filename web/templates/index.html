@@ -9,88 +9,95 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
---bg:#080c14;--bg2:#0d1520;--card:rgba(18,24,32,.85);--card-hover:rgba(26,36,48,.9);
---border:rgba(56,189,248,.12);--border-active:rgba(56,189,248,.35);--fg:#e6edf3;--dim:#5a6a80;
---green:#22c55e;--green-glow:rgba(34,197,94,.15);--yellow:#eab308;--red:#ef4444;
---cyan:#38bdf8;--cyan-glow:rgba(56,189,248,.12);--purple:#a78bfa;--orange:#fb923c;
---radius:14px;--radius-sm:8px;--shadow:0 8px 32px rgba(0,0,0,.3);--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace
+--bg:#060a0f;--bg2:#0b1119;--side:rgba(10,16,24,.95);--card:rgba(16,24,34,.88);--card2:rgba(22,32,46,.88);
+--border:rgba(56,189,248,.08);--border-hover:rgba(56,189,248,.2);--border-active:rgba(56,189,248,.35);
+--fg:#e2e8f0;--fg2:#94a3b8;--dim:#475569;
+--green:#22c55e;--green-bg:rgba(34,197,94,.1);--yellow:#eab308;--red:#ef4444;
+--cyan:#38bdf8;--cyan-bg:rgba(56,189,248,.08);--purple:#a78bfa;--orange:#fb923c;
+--radius:12px;--radius-sm:8px;--shadow:0 8px 40px rgba(0,0,0,.5);--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+--nav-w:220px
 }
-body{font-family:var(--font);background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
-background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,.03) 0%,transparent 50%),
-radial-gradient(ellipse at 70% 80%,rgba(168,85,247,.03) 0%,transparent 50%);
-pointer-events:none;z-index:0;animation:bgShift 20s ease-in-out infinite}
-@keyframes bgShift{0%,100%{transform:translate(0,0)}50%{transform:translate(-2%,-1%)}}
-::-webkit-scrollbar{width:4px;height:4px}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden;display:flex}
+body::before{content:'';position:fixed;inset:0;background:
+radial-gradient(ellipse 60% 40% at 20% 30%,rgba(56,189,248,.04) 0%,transparent 60%),
+radial-gradient(ellipse 50% 50% at 80% 70%,rgba(168,85,247,.03) 0%,transparent 60%),
+radial-gradient(ellipse 40% 30% at 50% 0%,rgba(34,197,94,.02) 0%,transparent 50%);
+pointer-events:none;z-index:0}
+canvas#particles{position:fixed;inset:0;pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:4px}
 ::selection{background:var(--cyan);color:#000}
-.container{max-width:1440px;margin:0 auto;padding:16px 20px;position:relative;z-index:1}
+
+/* Sidebar */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--nav-w);background:var(--side);border-right:1px solid var(--border);z-index:100;display:flex;flex-direction:column;backdrop-filter:blur(20px);transition:transform .3s ease}
+.sidebar-brand{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-brand .logo{font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill:transparent;letter-spacing:-.3px}
+.sidebar-brand .sub{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.sidebar-nav .nav-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);padding:16px 12px 6px;font-weight:600}
+.sidebar-nav button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:transparent;color:var(--fg2);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;transition:all .2s;font-family:var(--font);text-align:left}
+.sidebar-nav button:hover{background:var(--cyan-bg);color:var(--fg)}
+.sidebar-nav button.active{background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(168,85,247,.08));color:var(--cyan);box-shadow:inset 2px 0 0 var(--cyan)}
+.sidebar-nav button .icon{font-size:16px;width:24px;text-align:center}
+.sidebar-nav button .badge{background:var(--cyan-bg);color:var(--cyan);font-size:9px;padding:1px 7px;border-radius:10px;margin-left:auto}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--dim)}
+.sidebar-footer .live-dot{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;margin-right:4px}
+
+/* Main content */
+.main{margin-left:var(--nav-w);flex:1;position:relative;z-index:1;min-height:100vh}
+.container{max-width:1400px;padding:16px 22px 30px}
 
 /* Header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;gap:10px}
-.header-left{display:flex;align-items:center;gap:12px}
-.logo{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill:transparent;letter-spacing:-.5px}
-.logo-sub{font-size:9px;color:var(--dim);background:var(--card);padding:2px 10px;border-radius:20px;border:1px solid var(--border);font-weight:600;letter-spacing:.5px}
-.prices{display:flex;gap:16px;font-size:12px;align-items:center;flex-wrap:wrap}
-.price-item{display:flex;align-items:center;gap:6px;padding:4px 12px;background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(8px)}
-.price-item .dot{width:5px;height:5px;border-radius:50%}
-.price-item .sym{color:var(--dim);font-weight:500}
-.price-item .val{font-family:var(--mono);font-size:13px;font-weight:600}
-.price-up{color:var(--green)}.price-down{color:var(--red)}
-
-/* Live ticker */
-.ticker{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 16px;margin-bottom:14px;overflow:hidden;backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px}
-.ticker-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);white-space:nowrap}
-.ticker-wrap{overflow:hidden;flex:1;position:relative;height:20px}
-.ticker-inner{display:flex;gap:40px;animation:tick 30s linear infinite;position:absolute;white-space:nowrap}
-.ticker-item{font-size:12px;color:var(--dim);font-family:var(--mono)}
-.ticker-item b{color:var(--fg)}
-.ticker-item .val{font-weight:600;margin-left:4px}
-@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-
-/* Nav */
-.nav{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:4px;backdrop-filter:blur(8px)}
-.nav button{padding:10px 18px;border:none;background:transparent;color:var(--dim);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;transition:all .25s;font-family:var(--font);display:flex;align-items:center;gap:6px}
-.nav button:hover{background:rgba(56,189,248,.08);color:var(--fg)}
-.nav button.active{background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(168,85,247,.1));color:var(--cyan)}
-@media(max-width:600px){.nav button{padding:8px 12px;font-size:11px}.nav button span.nav-label{display:none}}
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.header-left{display:flex;align-items:center;gap:10px}
+.menu-btn{display:none;background:none;border:none;color:var(--fg);font-size:20px;cursor:pointer;padding:4px}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.price-chip{display:flex;align-items:center;gap:5px;padding:4px 12px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:default}
+.price-chip .sym{color:var(--dim);font-weight:500}
+.price-chip .val{font-family:var(--mono);font-weight:600;font-size:12px}
+.price-chip .change{font-size:9px;padding:1px 5px;border-radius:4px;font-weight:600}
+.change.up{background:var(--green-bg);color:var(--green)}.change.down{background:rgba(239,68,68,.1);color:var(--red)}
+.updated-at{font-size:10px;color:var(--dim)}
 
 /* Tabs */
-.tab{display:none;animation:tabIn .35s ease}
+.tab{display:none;animation:fadeUp .4s ease}
 .tab.active{display:block}
-@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-/* Stats */
+/* Stats row */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:all .3s;backdrop-filter:blur(8px);position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .3s}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:all .3s;backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .4s;border-radius:var(--radius)}
+.stat-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
 .stat-card:hover::before{opacity:1}
-.stat-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
-.stat-card .icon{font-size:18px;margin-bottom:6px}
-.stat-card .label{font-size:10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
-.stat-card .value{font-size:24px;font-weight:700;font-family:var(--mono)}
-.stat-card .sub{font-size:10px;color:var(--dim);margin-top:3px}
-.stat-card.cyan::before{background:var(--cyan)}.stat-card.green::before{background:var(--green)}
-.stat-card.yellow::before{background:var(--yellow)}.stat-card.purple::before{background:var(--purple)}
+.stat-card .stat-icon{font-size:20px;margin-bottom:8px}
+.stat-card .stat-label{font-size:10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.stat-card .stat-value{font-size:26px;font-weight:700;font-family:var(--mono);line-height:1.2}
+.stat-card .stat-sub{font-size:10px;color:var(--dim);margin-top:3px}
+.stat-card.st-cyan .stat-value{color:var(--cyan)}.stat-card.st-green .stat-value{color:var(--green)}
+.stat-card.st-yellow .stat-value{color:var(--yellow)}.stat-card.st-purple .stat-value{color:var(--purple)}
+.stat-card.st-cyan::before{background:linear-gradient(135deg,rgba(56,189,248,.04),transparent)}
+.stat-card.st-green::before{background:linear-gradient(135deg,rgba(34,197,94,.04),transparent)}
 
 /* Cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;transition:all .3s;backdrop-filter:blur(8px)}
-.card:hover{border-color:var(--border-active)}
-.card-header{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.card-header .title{display:flex;align-items:center;gap:8px;color:var(--fg)}
-.card-body{padding:14px 18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;transition:all .3s;backdrop-filter:blur(12px)}
+.card:hover{border-color:var(--border-hover)}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-header .card-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--fg)}
+.card-body{padding:16px 18px}
 .card-body.no-pad{padding:0}
 
 /* Tables */
-.table-wrap{overflow-x:auto}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{text-align:left;padding:9px 12px;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;font-size:10px;text-transform:uppercase;letter-spacing:.5px;transition:color .2s}
-th:hover{color:var(--cyan)}th.sorted{color:var(--cyan)}
-td{padding:7px 12px;border-bottom:1px solid rgba(30,42,56,.4);font-family:var(--mono);font-size:11px;transition:background .15s}
+th{text-align:left;padding:10px 12px;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;font-size:10px;text-transform:uppercase;letter-spacing:.5px;transition:color .2s;position:sticky;top:0;background:var(--card);z-index:1}
+th:hover{color:var(--cyan)}
+td{padding:8px 12px;border-bottom:1px solid rgba(30,42,56,.3);font-family:var(--mono);font-size:11px;transition:background .15s}
 tr:last-child td{border-bottom:none}
-tbody tr{transition:background .15s}
-tbody tr:hover td{background:rgba(56,189,248,.04)}
+tbody tr{cursor:default}
+tbody tr:hover td{background:rgba(56,189,248,.03)}
 
 /* Badges */
 .badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px}
@@ -101,149 +108,184 @@ tbody tr:hover td{background:rgba(56,189,248,.04)}
 .badge.medium{background:rgba(234,179,8,.12);color:var(--yellow)}
 .badge.high{background:rgba(239,68,68,.12);color:var(--red)}
 
-/* Forms */
-input,select{padding:9px 14px;background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:13px;font-family:var(--font);outline:none;transition:all .25s;width:100%}
+/* Inputs */
+input,select{padding:10px 14px;background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:13px;font-family:var(--font);outline:none;transition:all .25s;width:100%}
 input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.08)}
-::placeholder{color:var(--dim)}
+input::placeholder{color:var(--dim)}
 .form-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 
 /* Copyable */
-.addr{cursor:pointer;position:relative;transition:all .2s;border-bottom:1px dashed transparent;font-weight:500}
+.addr{cursor:pointer;transition:all .2s;border-bottom:1px dashed transparent;font-weight:400}
 .addr:hover{color:var(--cyan)!important;border-bottom-color:var(--cyan)}
 .addr.copied{color:var(--green)!important}
-.tx-hash{font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer;transition:color .2s}
+.tx-hash{font-family:var(--mono);color:var(--dim);cursor:pointer;transition:color .2s;font-size:10px}
 .tx-hash:hover{color:var(--cyan)}
-.hash-val{max-width:80px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle}
 
 /* Buttons */
-.btn{padding:8px 18px;border:none;border-radius:var(--radius-sm);font-weight:600;font-size:11px;cursor:pointer;transition:all .2s;font-family:var(--font);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);font-weight:600;font-size:11px;cursor:pointer;transition:all .25s;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),#2563eb);color:#fff}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(56,189,248,.25)}
+.btn-primary:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 6px 20px rgba(56,189,248,.25)}
 .btn-success{background:linear-gradient(135deg,var(--green),#16a34a);color:#000}
-.btn-success:hover{opacity:.9;transform:translateY(-1px)}
+.btn-success:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,197,94,.2)}
 .btn-danger{background:linear-gradient(135deg,var(--red),#dc2626);color:#fff}
-.btn-danger:hover{opacity:.9}
-.btn-ghost{background:rgba(30,42,56,.6);color:var(--dim);border:1px solid var(--border)}
-.btn-ghost:hover{color:var(--fg);border-color:var(--cyan);background:rgba(56,189,248,.08)}
+.btn-danger:hover{opacity:.92}
+.btn-ghost{background:rgba(30,42,56,.6);color:var(--fg2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--fg);border-color:var(--border-hover);background:rgba(56,189,248,.06)}
 .btn-sm{padding:5px 12px;font-size:10px}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
 
 /* Chain status */
-.chain-status{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.chain-dot{display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px}
-.chain-dot .dot{width:6px;height:6px;border-radius:50%}
+.chain-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chain-pill{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 14px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-weight:500}
+.chain-pill .dot{width:6px;height:6px;border-radius:50%}
 .dot.on{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.4)}
 .dot.off{background:var(--red);box-shadow:0 0 8px rgba(239,68,68,.4)}
 
 /* Result box */
-.result-box{background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-family:var(--mono);font-size:11px;line-height:2;white-space:pre-wrap;max-height:500px;overflow-y:auto;margin-top:12px}
-.result-box .hl{color:var(--cyan)}
-.result-box .hlg{color:var(--green)}
-.result-box .hlr{color:var(--red)}
-.result-box .hly{color:var(--yellow)}
+.result-box{background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px;font-family:var(--mono);font-size:11px;line-height:2;white-space:pre-wrap;max-height:500px;overflow-y:auto;margin-top:12px}
+.result-box .hl{color:var(--cyan)}.result-box .hlg{color:var(--green)}.result-box .hlr{color:var(--red)}
+@media(max-width:600px){.result-box{font-size:10px;padding:12px}}
 
 /* Score bar */
 .score-bar{display:flex;gap:3px;margin:8px 0}
-.score-bar .seg{height:12px;border-radius:3px;flex:1}
-.score-bar .seg.on{background:var(--green)}
+.score-bar .seg{height:12px;border-radius:3px;flex:1;transition:all .2s}
+.score-bar .seg.on{background:var(--green);box-shadow:0 0 4px rgba(34,197,94,.3)}
 .score-bar .seg.warn{background:var(--yellow)}
 .score-bar .seg.danger{background:var(--red)}
 .score-bar .seg.off{background:rgba(30,42,56,.6)}
 
-/* Grid */
+/* Grids */
 .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-@media(max-width:1024px){.grid-2{grid-template-columns:1fr}}
-@media(max-width:768px){.grid-3{grid-template-columns:1fr}.header{flex-direction:column;align-items:stretch}}
+@media(max-width:1100px){.grid-2,.grid-3{grid-template-columns:1fr}}
 
-/* Whale popup */
-.whale-alert{position:fixed;top:20px;right:20px;background:var(--card);border:1px solid var(--cyan);border-radius:var(--radius);padding:14px 20px;z-index:999;animation:slideIn .4s ease;max-width:380px;box-shadow:var(--shadow);backdrop-filter:blur(12px)}
-@keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
-.whale-alert .wa-title{font-weight:700;font-size:13px;color:var(--cyan);margin-bottom:4px}
-.whale-alert .wa-detail{font-size:11px;color:var(--dim);font-family:var(--mono)}
-.whale-alert .wa-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px}
+/* Whale alert */
+.whale-popup{position:fixed;top:16px;right:16px;background:var(--card);border:1px solid var(--border-active);border-radius:var(--radius);padding:16px 20px;z-index:999;animation:popIn .4s ease;max-width:360px;box-shadow:var(--shadow);backdrop-filter:blur(16px)}
+@keyframes popIn{from{transform:translateX(120px);opacity:0}to{transform:translateX(0);opacity:1}}
+.whale-popup .wp-title{font-weight:700;font-size:13px;color:var(--cyan);margin-bottom:4px}
+.whale-popup .wp-detail{font-size:11px;color:var(--fg2);font-family:var(--mono)}
+.whale-popup .wp-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1}
 
 /* Empty state */
-.empty-state{text-align:center;padding:30px 20px;color:var(--dim)}
-.empty-state .icon{font-size:32px;margin-bottom:8px;opacity:.5}
+.empty-state{text-align:center;padding:36px 20px;color:var(--dim)}
+.empty-state .icon{font-size:36px;margin-bottom:10px;opacity:.4}
 .empty-state p{font-size:13px}
 
-/* Loading */
+/* Spinner */
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 20px;font-size:12px;z-index:999;animation:toastIn .3s ease;box-shadow:var(--shadow);backdrop-filter:blur(12px);display:flex;align-items:center;gap:8px}
-@keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-
-/* Token items */
-.scroll-list{max-height:320px;overflow-y:auto}
-.token-item{padding:10px 14px;border-bottom:1px solid rgba(30,42,56,.4);display:flex;justify-content:space-between;align-items:center;font-size:12px;cursor:pointer;transition:background .2s;border-radius:4px;margin:0 -4px}
-.token-item:hover{background:rgba(56,189,248,.04)}
-
-/* Monitor */
-.monitor-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* Tooltip */
-[data-tip]{position:relative}
-[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+6px);left:50%;transform:translateX(-50%);background:#1a2430;color:var(--fg);padding:4px 10px;border-radius:4px;font-size:10px;white-space:nowrap;border:1px solid var(--border);z-index:10}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 20px;font-size:12px;z-index:999;animation:toastUp .3s ease;box-shadow:var(--shadow);backdrop-filter:blur(16px)}
+@keyframes toastUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-/* Chart container */
-.chart-wrap{position:relative;height:200px}
+/* Token list */
+.scroll-list{max-height:360px;overflow-y:auto}
+.token-item{padding:10px 14px;border-bottom:1px solid rgba(30,42,56,.3);display:flex;justify-content:space-between;align-items:center;font-size:12px;cursor:pointer;transition:background .15s;border-radius:4px}
+.token-item:hover{background:rgba(56,189,248,.04)}
+.monitor-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;animation:pulse 2s infinite}
 
-/* Sort indicator */
-th .sort-arrow{opacity:.3;margin-left:3px;font-size:9px}
-th:hover .sort-arrow{opacity:1}
+/* Chart wrappers */
+.chart-box{position:relative}
+.chart-box canvas{width:100%!important}
+
+/* Search bar */
+.search-wrap{position:relative}
+.search-wrap input{padding-left:32px}
+.search-wrap .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:12px;pointer-events:none}
+
+/* Coin selector */
+.coin-group{display:flex;gap:6px;flex-wrap:wrap}
+.coin-group .coin-opt{padding:6px 16px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--fg2);cursor:pointer;font-size:12px;transition:all .2s;font-family:var(--font);font-weight:500}
+.coin-group .coin-opt:hover{border-color:var(--border-hover);color:var(--fg)}
+.coin-group .coin-opt.active{background:var(--cyan-bg);border-color:var(--cyan);color:var(--cyan)}
+
+/* Skeleton */
+.skeleton{background:linear-gradient(90deg,rgba(30,42,56,.6) 25%,rgba(30,42,56,.3) 50%,rgba(30,42,56,.6) 75%);background-size:200% 100%;animation:skeleton 1.5s infinite;border-radius:4px;height:14px;margin:4px 0}
+@keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Responsive */
+@media(max-width:768px){
+.sidebar{transform:translateX(-100%)}
+.sidebar.open{transform:translateX(0)}
+.menu-btn{display:block}
+.main{margin-left:0}
+.container{padding:12px 14px}
+.stats{grid-template-columns:repeat(2,1fr)}
+.stat-card .stat-value{font-size:20px}
+}
+
+/* Overlay */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+@media(max-width:768px){.sidebar-overlay.show{display:block}}
 </style>
 </head>
 <body>
+
+<canvas id="particles"></canvas>
+
+<!-- Sidebar -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-brand">
+<div class="logo">SmartMoneyTracker</div>
+<div class="sub">Pro Edition v2.0</div>
+</div>
+<nav class="sidebar-nav">
+<div class="nav-label">Main</div>
+<button class="active" data-tab="dashboard"><span class="icon">📊</span> Dashboard</button>
+<button data-tab="whales"><span class="icon">🐋</span> Whales <span class="badge" id="whale-badge">0</span></button>
+<button data-tab="analyze"><span class="icon">🔍</span> Token Scan</button>
+<button data-tab="wallets"><span class="icon">👛</span> Smart Wallets</button>
+<div class="nav-label">System</div>
+<button data-tab="settings"><span class="icon">⚙️</span> Settings</button>
+</nav>
+<div class="sidebar-footer">
+<span class="live-dot"></span> Live · <span id="sidebar-time">--:--:--</span>
+</div>
+</aside>
+
+<!-- Main -->
+<div class="main">
 <div class="container">
 
 <div class="header">
 <div class="header-left">
-<div class="logo">SmartMoneyTracker</div>
-<span class="logo-sub">PRO v2.0</span>
+<button class="menu-btn" onclick="toggleSidebar()">☰</button>
+<div style="font-size:14px;font-weight:700;color:var(--fg2)">Dashboard</div>
 </div>
-<div class="prices" id="prices"></div>
-</div>
-
-<div class="ticker">
-<span class="ticker-label">Live Feed</span>
-<div class="ticker-wrap"><div class="ticker-inner" id="ticker-content">Loading...</div></div>
-</div>
-
-<div class="nav" id="nav">
-<button class="active" data-tab="dashboard">📊 <span class="nav-label">Dashboard</span></button>
-<button data-tab="whales">🐋 <span class="nav-label">Whales</span></button>
-<button data-tab="analyze">🔍 <span class="nav-label">Token Scan</span></button>
-<button data-tab="wallets">👛 <span class="nav-label">Wallets</span></button>
-<button data-tab="settings">⚙️ <span class="nav-label">Settings</span></button>
+<div class="header-right" id="headerPrices"></div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="tab-dashboard" class="tab active">
-<div class="chain-status" style="margin-bottom:14px" id="chain-status"></div>
-<div class="stats" id="main-stats"></div>
-<div class="grid-2">
-<div class="card">
-<div class="card-header"><span class="title">🐋 Whale Activity</span><span id="whale-chart-time" style="font-size:10px;color:var(--dim)"></span></div>
-<div class="card-body"><div class="chart-wrap"><canvas id="whaleChart"></canvas></div></div>
-</div>
-<div class="card">
-<div class="card-header"><span class="title">💰 Price (ETH / BNB)</span></div>
-<div class="card-body"><div class="chart-wrap"><canvas id="priceChart"></canvas></div></div>
-</div>
+<div class="chain-strip" id="chainStatus"></div>
+<div class="stats" id="mainStats">
+<div class="stat-card st-cyan"><div class="skeleton" style="width:50px"></div></div>
+<div class="stat-card st-green"><div class="skeleton" style="width:60px"></div></div>
+<div class="stat-card st-yellow"><div class="skeleton" style="width:40px"></div></div>
+<div class="stat-card st-purple"><div class="skeleton" style="width:70px"></div></div>
 </div>
 <div class="grid-2">
 <div class="card">
-<div class="card-header"><span title="Latest Whale Moves" style="display:flex;align-items:center;gap:8px">🐋 Recent Whales</span> <button class="btn btn-ghost btn-sm" onclick="loadDashboardWhales()">⟳</button></div>
-<div class="card-body no-pad"><div class="table-wrap"><table><thead><tr><th>Time</th><th>Chain</th><th>Amount</th><th>USD</th><th>From</th><th>To</th></tr></thead>
-<tbody id="dash-whales"></tbody></table></div></div>
+<div class="card-header"><span class="card-title">🐋 Whale Activity</span><span id="whaleChartTime" style="font-size:10px;color:var(--dim)"></span></div>
+<div class="card-body"><div class="chart-box" style="height:200px"><canvas id="whaleChart"></canvas></div></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">👛 Smart Wallets</span></div>
-<div class="card-body scroll-list" id="dash-wallets"><div class="empty-state"><div class="icon">👛</div><p>No wallets tracked yet</p></div></div>
+<div class="card-header"><span class="card-title">💰 Price History</span></div>
+<div class="card-body"><div class="chart-box" style="height:200px"><canvas id="priceChart"></canvas></div></div>
+</div>
+</div>
+<div class="grid-2">
+<div class="card">
+<div class="card-header"><span class="card-title">🐋 Recent Whales</span><button class="btn btn-ghost btn-sm" onclick="loadDashboardWhales()">⟳</button></div>
+<div class="card-body no-pad"><div class="table-wrap"><table><thead><tr><th>Time</th><th>Chain</th><th>Amount</th><th style="text-align:right">USD</th><th>From</th><th>To</th></tr></thead>
+<tbody id="dashWhales"></tbody></table></div></div>
+</div>
+<div class="card">
+<div class="card-header"><span class="card-title">👛 Top Wallets</span></div>
+<div class="card-body scroll-list" id="dashWallets"><div class="empty-state"><div class="icon">👛</div><p>No wallets tracked</p></div></div>
 </div>
 </div>
 </div>
@@ -252,26 +294,26 @@ th:hover .sort-arrow{opacity:1}
 <div id="tab-whales" class="tab">
 <div class="card">
 <div class="card-header">
-<span class="title">🐋 Whale Transactions</span>
+<span class="card-title">🐋 Whale Transactions <span style="font-size:10px;color:var(--dim);font-weight:400" id="whaleTotal">(0)</span></span>
 <div style="display:flex;gap:5px;flex-wrap:wrap">
 <button class="btn btn-success btn-sm" onclick="startMonitor()" id="monBtn">▶ Monitor</button>
 <button class="btn btn-danger btn-sm" onclick="clearWhales()">🗑 Clear</button>
 <button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/whales')">📥 CSV</button>
 </div>
 </div>
-<div style="padding:6px 18px;font-size:11px;color:var(--dim);display:flex;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid var(--border)">
-<span>Click column headers to sort</span>
-<span id="monitor-status">○ Idle</span>
+<div style="padding:8px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--border)">
+<div class="search-wrap" style="flex:1;min-width:160px;max-width:300px"><span class="search-icon">🔍</span><input id="whaleSearch" placeholder="Search address or hash..." oninput="filterWhales()"></div>
+<span id="monStatus" style="font-size:11px;color:var(--dim)">○ Idle</span>
 </div>
 <div class="table-wrap"><table><thead><tr>
-<th onclick="sortTable('all-whales',0)">Time <span class="sort-arrow">▼</span></th>
-<th onclick="sortTable('all-whales',1)">Chain</th>
-<th onclick="sortTable('all-whales',2)">Amount</th>
-<th onclick="sortTable('all-whales',3)">USD <span class="sort-arrow">▼</span></th>
-<th onclick="sortTable('all-whales',4)">From</th>
-<th onclick="sortTable('all-whales',5)">To</th>
+<th onclick="sortTable('allWhales',0)">Time ▾</th>
+<th onclick="sortTable('allWhales',1)">Chain</th>
+<th onclick="sortTable('allWhales',2)">Amount</th>
+<th onclick="sortTable('allWhales',3)">USD ▾</th>
+<th onclick="sortTable('allWhales',4)">From</th>
+<th onclick="sortTable('allWhales',5)">To</th>
 <th>Tx</th>
-</tr></thead><tbody id="all-whales"></tbody></table></div>
+</tr></thead><tbody id="allWhales"></tbody></table></div>
 </div>
 </div>
 
@@ -279,19 +321,19 @@ th:hover .sort-arrow{opacity:1}
 <div id="tab-analyze" class="tab">
 <div class="grid-2">
 <div class="card">
-<div class="card-header"><span class="title">🔍 Token Risk Scanner</span></div>
+<div class="card-header"><span class="card-title">🔍 Token Risk Scanner</span></div>
 <div class="card-body">
 <div class="form-row">
-<div style="flex:3;min-width:200px"><input id="token-addr" placeholder="0x... token contract address"></div>
-<div style="flex:0 0 120px"><select id="token-chain"><option value="ethereum">Ethereum</option><option value="bsc">BSC</option><option value="base">Base</option></select></div>
-<button class="btn btn-primary" onclick="analyzeToken()" id="analyze-btn">🔍 Scan</button>
+<div style="flex:3;min-width:200px"><input id="tokenAddr" placeholder="0x... token address"></div>
+<div style="flex:0 0 120px"><select id="tokenChain"><option value="ethereum">Ethereum</option><option value="bsc">BSC</option><option value="base">Base</option></select></div>
+<button class="btn btn-primary" onclick="analyzeToken()" id="analyzeBtn">🔍 Scan</button>
 </div>
-<div id="token-result"></div>
+<div id="tokenResult"></div>
 </div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">📋 History</span></div>
-<div class="card-body scroll-list" id="recent-tokens" style="padding:8px 16px"><div class="empty-state"><div class="icon">📋</div><p>No tokens scanned yet</p></div></div>
+<div class="card-header"><span class="card-title">📋 History</span></div>
+<div class="card-body scroll-list" id="recentTokens" style="padding:8px 16px"></div>
 </div>
 </div>
 </div>
@@ -300,21 +342,20 @@ th:hover .sort-arrow{opacity:1}
 <div id="tab-wallets" class="tab">
 <div class="card">
 <div class="card-header">
-<span class="title">👛 Smart Wallet Tracker</span>
+<span class="card-title">👛 Smart Wallet Tracker</span>
 <div style="display:flex;gap:5px;flex-wrap:wrap">
-<button class="btn btn-ghost btn-sm" onclick="loadWallets()">⟳ Refresh</button>
+<button class="btn btn-ghost btn-sm" onclick="loadWallets()">⟳</button>
 <button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/wallets')">📥 CSV</button>
 </div>
 </div>
 <div class="card-body">
 <div class="form-row">
-<div style="flex:3;min-width:200px"><input id="wallet-addr" placeholder="0x... wallet address to track"></div>
-<button class="btn btn-success" onclick="trackWallet()" id="track-btn">👁 Track</button>
+<div style="flex:3;min-width:200px"><input id="walletAddr" placeholder="0x... wallet to track"></div>
+<button class="btn btn-success" onclick="trackWallet()" id="trackBtn">👁 Track</button>
 </div>
 </div>
-<div class="table-wrap"><table><thead><tr><th>Wallet</th><th>Chain</th><th>Trades</th><th>Profit</th><th>Win Rate</th><th>Top Tokens</th></tr></thead>
-<tbody id="wallet-table-body"></tbody></table>
-</div>
+<div class="table-wrap"><table><thead><tr><th>Wallet</th><th>Chain</th><th style="text-align:right">Trades</th><th style="text-align:right">Profit</th><th style="text-align:right">Win Rate</th><th>Top Tokens</th></tr></thead>
+<tbody id="walletTable"></tbody></table></div>
 </div>
 </div>
 
@@ -322,275 +363,295 @@ th:hover .sort-arrow{opacity:1}
 <div id="tab-settings" class="tab">
 <div class="grid-3">
 <div class="card">
-<div class="card-header"><span class="title">🌐 Networks</span></div>
-<div class="card-body" id="settings-chains" style="font-size:13px"></div>
+<div class="card-header"><span class="card-title">🌐 Networks</span></div>
+<div class="card-body" id="settingsChains" style="font-size:13px"></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">📊 Statistics</span></div>
-<div class="card-body" id="settings-stats" style="font-size:13px"></div>
+<div class="card-header"><span class="card-title">📊 Statistics</span></div>
+<div class="card-body" id="settingsStats" style="font-size:13px"></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">ℹ️ About</span></div>
-<div class="card-body" style="font-size:13px;line-height:1.9">
+<div class="card-header"><span class="card-title">ℹ️ About</span></div>
+<div class="card-body" style="font-size:13px;line-height:2">
 <strong>Crypto Smart Money Tracker Pro</strong><br>
-<span style="color:var(--dim)">v2.0 — Web Edition</span><br><br>
-Track whales, scan tokens for rug pulls,<br>
-follow smart money across<br>
+<span style="color:var(--dim)">v2.0 · Web Edition</span><br><br>
+Real-time whale tracking · Token risk analysis<br>
+Smart money wallet monitoring<br>
 Ethereum · BSC · Base<br><br>
-<span style="font-size:11px;color:var(--dim)">Flask · Chart.js · Web3.py</span>
+<span style="font-size:11px;color:var(--dim)">Built with Flask · Chart.js · Web3.py</span>
 </div>
 </div>
 </div>
 </div>
 
-</div>
+</div></div>
 
 <script>
-let monitoring = false, monitorInterval, whaleChart, priceChart, tickerCache = [];
+// === STATE ===
+let monitoring=false,monInt,whaleChart,priceChart,whaleCache=[],chartInit=false;
 
-// Tab switching
-document.querySelectorAll("#nav button").forEach(b=>{
+// === SIDEBAR ===
+function toggleSidebar(){document.getElementById("sidebar").classList.toggle("open");document.getElementById("sidebarOverlay").classList.toggle("show")}
+
+// === TAB SWITCHING ===
+document.querySelectorAll(".sidebar-nav button[data-tab]").forEach(b=>{
 b.onclick=()=>{
-document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+document.querySelectorAll(".sidebar-nav button[data-tab]").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+const tab=document.getElementById("tab-"+b.dataset.tab);
+if(tab){tab.classList.add("active")}
+// Update header title
+document.querySelector(".header-left div:last-child").textContent=b.textContent.trim().replace(/^\S+\s*/,'');
 const m={whales:"loadAllWhales",wallets:"loadWallets",dashboard:"loadStatus"};
 if(m[b.dataset.tab]) window[m[b.dataset.tab]]();
 if(b.dataset.tab==="analyze") loadRecentTokens();
+if(window.innerWidth<=768) toggleSidebar();
 }});
 
-function toast(msg,color="var(--green)"){const t=document.createElement("div");t.className="toast";t.innerHTML=msg;t.style.borderColor=color;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+// === HELPERS ===
+function toast(msg,clr="var(--green)"){const t=document.createElement("div");t.className="toast";t.textContent=msg;t.style.borderColor=clr;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 async function api(url,o){const r=await fetch(url,o);return r.json()}
 
-// TICKER
-async function updateTicker(){
+// === CLOCK ===
+setInterval(()=>{const d=new Date();document.getElementById("sidebar-time").textContent=d.toLocaleTimeString()},1000)
+
+// === HEADER PRICES ===
+async function loadHeader(){
 try{
 const d=await api("/api/status");
-const w=await api("/api/whales?limit=6");
-const ticker = document.getElementById("ticker-content");
-const items = [];
-if(d.prices){
-items.push(`ETH <b class="${d.chart.price_eth?.length>1?'val':''}">$${d.prices.ethereum?.toLocaleString()}</b>`);
-items.push(`BNB <b>$${d.prices.binancecoin?.toLocaleString()}</b>`);
-}
-items.push(`Whales: ${d.whales} · Vol: $${(d.volume||0).toLocaleString()}`);
-if(w.length) items.push(`Last: ${w[0].value?.toFixed(2)} ${w[0].symbol} ($${(w[0].usd_value||0).toLocaleString()})`);
-const html = items.concat(items).map(i=>`<span class="ticker-item">${i}</span>`).join("");
-ticker.innerHTML = html;
-tickerCache = items;
-}catch(e){}
-}
+if(!d.prices) return;
+const p=d.prices,et=d.chart?.price_eth?.slice(-2),bn=d.chart?.price_bnb?.slice(-2);
+const ec=et&&et.length>1?(et[1]-et[0])/et[0]*100:0,bc=bn&&bn.length>1?(bn[1]-bn[0])/bn[0]*100:0;
+document.getElementById("headerPrices").innerHTML=`
+<div class="price-chip"><span class="sym">ETH</span><span class="val">$${p.ethereum?.toLocaleString()}</span>${ec?`<span class="change ${ec>=0?'up':'down'}">${ec>=0?'+':''}${ec.toFixed(2)}%</span>`:''}</div>
+<div class="price-chip"><span class="sym">BNB</span><span class="val">$${p.binancecoin?.toLocaleString()}</span>${bc?`<span class="change ${bc>=0?'up':'down'}">${bc>=0?'+':''}${bc.toFixed(2)}%</span>`:''}</div>
+<span class="updated-at">${d.time?.slice(11,16)||''}</span>`;
+}catch(e){}}
 
-// STATUS
+// === CHAIN STATUS ===
+function renderChains(ch){document.getElementById("chainStatus").innerHTML=Object.entries(ch).map(([c,ok])=>`<span class="chain-pill"><span class="dot ${ok?'on':'off'}"></span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>`).join("")}
+
+// === DASHBOARD ===
 async function loadStatus(){
 try{
 const d=await api("/api/status");
-const phtml=Object.entries(d.prices||{}).map(([k,v])=>{
-const sym=k==="ethereum"?"ETH":"BNB",prev=window[`_p_${k}`],cls=prev!==undefined?(v>prev?"price-up":v<prev?"price-down":""):"";
-window[`_p_${k}`]=v;
-return `<div class="price-item"><span class="dot" style="background:${cls.includes('up')?'var(--green)':cls.includes('down')?'var(--red)':'var(--dim)'}"></span><span class="sym">${sym}</span><span class="val ${cls}">$${v.toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>`;
-}).join("");
-document.getElementById("prices").innerHTML=phtml;
-const ch=d.chains||{};
-document.getElementById("chain-status").innerHTML=Object.entries(ch).map(([c,ok])=>`<span class="chain-dot"><span class="dot ${ok?'on':'off'}"></span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>`).join("");
-document.getElementById("main-stats").innerHTML=`
-<div class="stat-card cyan"><div class="icon">🐋</div><div class="label">Whales</div><div class="value" style="color:var(--cyan)">${d.whales}</div><div class="sub">Total detected</div></div>
-<div class="stat-card green"><div class="icon">💰</div><div class="label">Volume</div><div class="value" style="color:var(--green)">$${(d.volume||0).toLocaleString()}</div><div class="sub">All chains</div></div>
-<div class="stat-card yellow"><div class="icon">👛</div><div class="label">Wallets</div><div class="value" style="color:var(--yellow)">${d.wallets}</div><div class="sub">Tracked</div></div>
-<div class="stat-card purple"><div class="icon">📡</div><div class="label">Networks</div><div class="value" style="font-size:20px">${Object.values(ch).filter(Boolean).length}/3</div><div class="sub">${Object.entries(ch).map(([c])=>c.slice(0,3).toUpperCase()).join(' · ')}</div></div>`;
-if(d.chart&&whaleChart){
+const ch=d.chains||{};renderChains(ch);
+document.getElementById("mainStats").innerHTML=`
+<div class="stat-card st-cyan"><div class="stat-icon">🐋</div><div class="stat-label">Whales</div><div class="stat-value" style="counter-set:n">${d.whales}</div><div class="stat-sub">Total detected</div></div>
+<div class="stat-card st-green"><div class="stat-icon">💰</div><div class="stat-label">Volume</div><div class="stat-value">$${(d.volume||0).toLocaleString()}</div><div class="stat-sub">Across all chains</div></div>
+<div class="stat-card st-yellow"><div class="stat-icon">👛</div><div class="stat-label">Wallets</div><div class="stat-value">${d.wallets}</div><div class="stat-sub">Tracked</div></div>
+<div class="stat-card st-purple"><div class="stat-icon">📡</div><div class="stat-label">Networks</div><div class="stat-value">${Object.values(ch).filter(Boolean).length}/3</div><div class="stat-sub">${Object.entries(ch).map(([c])=>c.slice(0,3).toUpperCase()).join(' · ')}</div></div>`;
+// Badge
+document.getElementById("whale-badge").textContent=d.whales;
+// Charts
+if(d.chart&&whaleChart&&chartInit){
 const v=d.chart.volume||[],c=d.chart.counts||[],l=v.map((_,i)=>`-${(v.length-i)*0.5}m`);
 whaleChart.data.labels=l;whaleChart.data.datasets[0].data=v;whaleChart.data.datasets[1].data=c;
-whaleChart.update('none');
-}
-if(d.chart&&priceChart){
+whaleChart.update('none');}
+if(d.chart&&priceChart&&chartInit){
 const pe=d.chart.price_eth||[],pb=d.chart.price_bnb||[],ml=Math.max(pe.length,pb.length);
 priceChart.data.labels=Array.from({length:ml},(_,i)=>i);
 priceChart.data.datasets[0].data=pe;priceChart.data.datasets[1].data=pb;
-priceChart.update('none');
-}
-}catch(e){}
-}
+priceChart.update('none');}
+}catch(e){}}
 
-// WHALES
 async function loadDashboardWhales(){
 try{
 const w=await api("/api/whales?limit=6");
-document.getElementById("dash-whales").innerHTML=w.length?w.map(x=>`<tr>
+document.getElementById("dashWhales").innerHTML=w.length?w.map(x=>`<tr>
 <td style="font-size:10px;color:var(--dim)">${(x.timestamp||"").slice(5,16)||"?"}</td>
 <td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
 <td>${(x.value||0).toFixed(2)} ${x.symbol||""}</td>
-<td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
-<td><span class="addr" onclick="copyText('${x.from_addr||""}')" title="Click to copy">${(x.from_addr||"").slice(0,10)}..</span></td>
-<td><span class="addr" onclick="copyText('${x.to_addr||""}')" title="Click to copy">${(x.to_addr||"").slice(0,10)}..</span></td>
-</tr>`).join(""):'<tr><td colspan="6"><div class="empty-state"><p>No data yet</p></div></td></tr>';
+<td style="text-align:right;color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
+<td><span class="addr" onclick="copyText('${x.from_addr||""}')">${(x.from_addr||"").slice(0,10)}..</span></td>
+<td><span class="addr" onclick="copyText('${x.to_addr||""}')">${(x.to_addr||"").slice(0,10)}..</span></td>
+</tr>`).join(""):'<tr><td colspan="6"><div class="empty-state"><p>No data</p></div></td></tr>';
 }catch(e){}}
 
+// === WHALES ===
 async function loadAllWhales(){
 try{
-const w=await api("/api/whales?limit=100");
-document.getElementById("all-whales").innerHTML=w.length?w.map(x=>`<tr>
+const w=await api("/api/whales?limit=200");
+whaleCache=w;
+document.getElementById("whaleTotal").textContent=`(${w.length})`;
+filterWhales();
+}catch(e){}}
+
+function filterWhales(){
+const q=document.getElementById("whaleSearch").value.toLowerCase();
+const w=q?whaleCache.filter(x=>JSON.stringify(x).toLowerCase().includes(q)):whaleCache;
+document.getElementById("allWhales").innerHTML=w.length?w.map(x=>`<tr>
 <td style="font-size:10px;color:var(--dim)">${(x.timestamp||"").slice(5,19)||"?"}</td>
 <td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
 <td>${(x.value||0).toFixed(4)} ${x.symbol||""}</td>
-<td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
+<td style="text-align:right;color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
 <td><span class="addr" onclick="copyText('${x.from_addr||""}')">${(x.from_addr||"").slice(0,12)}..</span></td>
 <td><span class="addr" onclick="copyText('${x.to_addr||""}')">${(x.to_addr||"").slice(0,12)}..</span></td>
-<td><span class="tx-hash" onclick="copyText('${x.hash||""}')"><span class="hash-val">${(x.hash||"").slice(0,14)}</span></span></td>
-</tr>`).join(""):'<tr><td colspan="7"><div class="empty-state"><p>No data</p></div></td></tr>';
-}catch(e){}}
+<td><span class="tx-hash" onclick="copyText('${x.hash||""}')">${(x.hash||"").slice(0,14)}..</span></td>
+</tr>`).join(""):'<tr><td colspan="7"><div class="empty-state"><p>No matches</p></div></td></tr>';
+}
 
-async function clearWhales(){await api("/api/whales/clear",{method:"POST"});loadAllWhales();loadDashboardWhales();loadStatus();toast("Cleared")}
+async function clearWhales(){await api("/api/whales/clear",{method:"POST"});loadAllWhales();loadDashboardWhales();loadStatus();toast("Whale data cleared")}
 
 function startMonitor(){
 monitoring=!monitoring;
 if(monitoring){
 document.getElementById("monBtn").innerHTML="⏹ Stop";document.getElementById("monBtn").className="btn btn-danger btn-sm";
-document.getElementById("monitor-status").innerHTML='<span class="monitor-dot" style="background:var(--green)"></span> Live';
-monitorInterval=setInterval(()=>{loadAllWhales();loadStatus()},5000);toast("Monitoring started");
+document.getElementById("monStatus").innerHTML='<span class="monitor-dot" style="background:var(--green)"></span> Live';monInt=setInterval(()=>{loadAllWhales();loadStatus()},5000);toast("Monitoring started");
 }else{
 document.getElementById("monBtn").innerHTML="▶ Monitor";document.getElementById("monBtn").className="btn btn-success btn-sm";
-document.getElementById("monitor-status").textContent="○ Idle";clearInterval(monitorInterval);toast("Stopped","var(--yellow)");
+document.getElementById("monStatus").textContent="○ Idle";clearInterval(monInt);toast("Stopped","var(--yellow)");
 }}
 
-// TOKEN SCAN
+// === TOKEN ===
 async function analyzeToken(){
-const addr=document.getElementById("token-addr").value.trim(),chain=document.getElementById("token-chain").value;
-if(!addr.startsWith("0x")||addr.length<42) return toast("Invalid address","var(--red)");
-const btn=document.getElementById("analyze-btn");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Scanning...';
-document.getElementById("token-result").innerHTML="";
+const a=document.getElementById("tokenAddr").value.trim(),ch=document.getElementById("tokenChain").value;
+if(!a.startsWith("0x")||a.length<42) return toast("Invalid address","var(--red)");
+const b=document.getElementById("analyzeBtn");b.disabled=true;b.innerHTML='<span class="spinner"></span> Scanning...';
+document.getElementById("tokenResult").innerHTML="";
 try{
-const r=await api("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr,chain})});
-if(r.error){toast(r.error,"var(--red)");btn.disabled=false;btn.innerHTML="🔍 Scan";return}
+const r=await api("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:a,chain:ch})});
+if(r.error){toast(r.error,"var(--red)");b.disabled=false;b.innerHTML="🔍 Scan";return}
 const cl={low:"var(--green)",medium:"var(--yellow)",high:"var(--red)"},c=cl[r.risk]||"var(--dim)";
 const sb=Array.from({length:20},(_,i)=>{const s=r.score||50;return `<div class="seg ${i<s/5?'on':'off'}"></div>`}).join("");
-let html=`<div class="result-box" style="border-left:3px solid ${c}">`;
-html+=`<span class="hl">TOKEN</span>  ${r.name||"?"} (<span class="hlg">${r.symbol||"?"}</span>)\n`;
-html+=`<span class="hl">ADDR</span>   ${addr.slice(0,24)}...\n`;
-html+=`<span class="hl">CHAIN</span>  ${chain.charAt(0).toUpperCase()+chain.slice(1)}\n`;
-html+=`${"=".repeat(50)}\n\n`;
-html+=`<span class="hl">RISK</span>      <span style="color:${c};font-weight:700">${r.risk.toUpperCase()}</span>\n`;
-html+=`<span class="hl">SCORE</span>     ${r.score}/100\n<div class="score-bar">${sb}</div>\n`;
-if(r.ownership_renounced!==undefined) html+=`<span class="hl">OWNER</span>     ${r.ownership_renounced?'Renounced ✅':'NOT Renounced ❌'}\n`;
-if(r.liquidity_usd) html+=`<span class="hl">LIQ</span>       $${Number(r.liquidity_usd).toLocaleString()}\n`;
-if(r.top_holder_pct) html+=`<span class="hl">HOLDER</span>    Top: ${(r.top_holder_pct*100).toFixed(1)}%\n`;
-if(r.total_supply) html+=`<span class="hl">SUPPLY</span>    ${Number(r.total_supply).toLocaleString()}\n`;
-if(r.honeypot) html+=`\n🚨 <span class="hlr">HONEYPOT</span>\n`;
-if(r.issues&&r.issues.length){html+=`\n⚠ ISSUES:\n`;r.issues.forEach(i=>html+=`  • <span class="hlr">${i}</span>\n`)}
-if(r.risk==="low"&&(!r.issues||!r.issues.length)) html+=`\n✅ <span class="hlg">Token appears safe</span>\n`;
-html+=`${"=".repeat(50)}</div>`;
-document.getElementById("token-result").innerHTML=html;loadRecentTokens();toast("Done");
+let h=`<div class="result-box" style="border-left:3px solid ${c}">`;
+h+=`<span class="hl">TOKEN</span>  ${r.name||"?"} (<span class="hlg">${r.symbol||"?"}</span>)\n`;
+h+=`<span class="hl">ADDR</span>   ${a.slice(0,24)}...\n`;
+h+=`<span class="hl">CHAIN</span>  ${ch.charAt(0).toUpperCase()+ch.slice(1)}\n${"=".repeat(50)}\n\n`;
+h+=`<span class="hl">RISK</span>      <span style="color:${c};font-weight:700">${r.risk.toUpperCase()}</span>\n`;
+h+=`<span class="hl">SCORE</span>     ${r.score}/100\n<div class="score-bar">${sb}</div>\n`;
+if(r.ownership_renounced!==undefined) h+=`<span class="hl">OWNER</span>     ${r.ownership_renounced?'Renounced ✅':'NOT Renounced ❌'}\n`;
+if(r.liquidity_usd) h+=`<span class="hl">LIQ</span>       $${Number(r.liquidity_usd).toLocaleString()}\n`;
+if(r.top_holder_pct) h+=`<span class="hl">HOLDER</span>    Top: ${(r.top_holder_pct*100).toFixed(1)}%\n`;
+if(r.total_supply) h+=`<span class="hl">SUPPLY</span>    ${Number(r.total_supply).toLocaleString()}\n`;
+if(r.honeypot) h+=`\n🚨 <span class="hlr">HONEYPOT DETECTED</span>\n`;
+if(r.issues&&r.issues.length){h+=`\n⚠ ISSUES:\n`;r.issues.forEach(i=>h+=`  • <span class="hlr">${i}</span>\n`)}
+if(r.risk==="low"&&(!r.issues||!r.issues.length)) h+=`\n✅ <span class="hlg">Token appears safe</span>\n`;
+h+=`${"=".repeat(50)}</div>`;
+document.getElementById("tokenResult").innerHTML=h;loadRecentTokens();toast("Analysis complete");
 }catch(e){toast("Error","var(--red)")}
-btn.disabled=false;btn.innerHTML="🔍 Scan";
+b.disabled=false;b.innerHTML="🔍 Scan";
 }
 
 async function loadRecentTokens(){
 try{
-const t=await api("/api/tokens/recent");
-const el=document.getElementById("recent-tokens");
-if(!t.length){el.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No tokens scanned yet</p></div>';return}
-el.innerHTML=t.map(x=>`<div class="token-item" onclick="document.getElementById('token-addr').value='${x.address}';document.querySelector('[data-tab=analyze]').click()">
+const t=await api("/api/tokens/recent"),el=document.getElementById("recentTokens");
+if(!t.length){el.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No tokens scanned</p></div>';return}
+el.innerHTML=t.map(x=>`<div class="token-item" onclick="document.getElementById('tokenAddr').value='${x.address}';document.querySelector('[data-tab=analyze]').click()">
 <span>${x.symbol||"?"} <span style="color:var(--dim);font-size:10px">${(x.address||"").slice(0,14)}..</span></span>
 <span class="badge ${x.risk||'medium'}">${(x.risk||"?").toUpperCase()} ${x.score||0}</span>
 </div>`).join("");
 }catch(e){}}
 
-// WALLETS
+// === WALLETS ===
 async function loadWallets(){
 try{
-const w=await api("/api/wallets");
-const tbody=document.getElementById("wallet-table-body");
-tbody.innerHTML=w.length?w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).map(x=>`<tr>
+const w=await api("/api/wallets"),tb=document.getElementById("walletTable");
+tb.innerHTML=w.length?w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).map(x=>`<tr>
 <td><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}..${(x.wallet||"").slice(-4)}</span></td>
-<td>${x.chain||"?"}</td><td>${x.total_trades||0}</td>
-<td style="color:var(--green);font-weight:600">$${(x.estimated_profit_usd||0).toLocaleString()}</td>
-<td>${((x.win_rate||0)*100).toFixed(0)}%</td>
+<td>${x.chain||"?"}</td><td style="text-align:right">${x.total_trades||0}</td>
+<td style="text-align:right;color:var(--green);font-weight:600">$${(x.estimated_profit_usd||0).toLocaleString()}</td>
+<td style="text-align:right">${((x.win_rate||0)*100).toFixed(0)}%</td>
 <td style="font-size:10px;color:var(--dim)">${(x.tokens_traded||[]).slice(0,4).join(", ")}</td>
 </tr>`).join(""):'<tr><td colspan="6"><div class="empty-state"><div class="icon">👛</div><p>No wallets tracked</p></div></td></tr>';
-const dw=document.getElementById("dash-wallets");
+const dw=document.getElementById("dashWallets");
 if(w.length){dw.innerHTML=w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).slice(0,5).map(x=>`
-<div class="token-item"><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}..<span style="color:var(--dim)"> ${x.chain||""}</span></span>
+<div class="token-item"><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}.. <span style="color:var(--dim)">${x.chain||""}</span></span>
 <span style="color:var(--green);font-family:var(--mono)">$${(x.estimated_profit_usd||0).toLocaleString()}</span></div>`).join("")
-}else{dw.innerHTML='<div class="empty-state"><div class="icon">👛</div><p>No wallets tracked yet</p></div>'}
+}else{dw.innerHTML='<div class="empty-state"><div class="icon">👛</div><p>No wallets tracked</p></div>'}
 }catch(e){}}
 
 async function trackWallet(){
-const addr=document.getElementById("wallet-addr").value.trim();
-if(!addr.startsWith("0x")) return toast("Invalid address","var(--red)");
-const btn=document.getElementById("track-btn");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Tracking...';
-const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr})});
+const a=document.getElementById("walletAddr").value.trim();
+if(!a.startsWith("0x")) return toast("Invalid address","var(--red)");
+const b=document.getElementById("trackBtn");b.disabled=true;b.innerHTML='<span class="spinner"></span> Tracking...';
+const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:a})});
 if(r.status==="ok"){toast(r.message);setTimeout(loadWallets,3000)}else toast(r.error||"Error","var(--red)");
-btn.disabled=false;btn.innerHTML="👁 Track";
+b.disabled=false;b.innerHTML="👁 Track";
 }
 
-// SETTINGS
+// === SETTINGS ===
 async function loadSettings(){
 try{
 const d=await api("/api/status"),ch=d.chains||{};
-document.getElementById("settings-chains").innerHTML=Object.entries(ch).map(([c,ok])=>`
-<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-<span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>
-<span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'● Connected':'○ Disconnected'}</span>
-</div>`).join("");
-document.getElementById("settings-stats").innerHTML=`
+document.getElementById("settingsChains").innerHTML=Object.entries(ch).map(([c,ok])=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span>${c.charAt(0).toUpperCase()+c.slice(1)}</span><span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'● Connected':'○ Disconnected'}</span></div>`).join("");
+document.getElementById("settingsStats").innerHTML=`
 <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>🐋 Whales</span><span style="font-family:var(--mono)">${d.whales}</span></div>
 <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>💰 Volume</span><span style="font-family:var(--mono);color:var(--green)">$${(d.volume||0).toLocaleString()}</span></div>
 <div style="padding:10px 0;display:flex;justify-content:space-between"><span>👛 Wallets</span><span style="font-family:var(--mono)">${d.wallets}</span></div>`;
 }catch(e){}}
 
-// SORT
+// === SORT ===
+let sortState={};
 function sortTable(id,col){
-const tbody=document.getElementById(id),rows=Array.from(tbody.querySelectorAll("tr"));
+const tb=document.getElementById(id),rows=Array.from(tb.querySelectorAll("tr"));
+const key=id+'_'+col;sortState[key]=sortState[key]==='asc'?'desc':'asc';
+const dir=sortState[key]==='asc'?1:-1;
 rows.sort((a,b)=>{const va=a.cells[col]?.textContent.trim()||"",vb=b.cells[col]?.textContent.trim()||"";
 const na=parseFloat(va.replace(/[$,]/g,"")),nb=parseFloat(vb.replace(/[$,]/g,""));
-if(!isNaN(na)&&!isNaN(nb)) return nb-na;return vb.localeCompare(va)});
-rows.forEach(r=>tbody.appendChild(r));
-const headers=tbody.closest("table").querySelectorAll("th");headers.forEach(h=>h.classList.remove("sorted"));
-headers[col]?.classList.add("sorted");
+if(!isNaN(na)&&!isNaN(nb)) return (na-nb)*dir;return vb.localeCompare(va)*dir});
+rows.forEach(r=>tb.appendChild(r));
+tb.closest("table").querySelectorAll("th").forEach(h=>h.classList.remove("sorted"));tb.closest("table").querySelectorAll("th")[col]?.classList.add("sorted");
 }
 
-// CHARTS
+// === CHARTS ===
 function initCharts(){
-const ctx1=document.getElementById("whaleChart")?.getContext("2d");
-if(ctx1){whaleChart=new Chart(ctx1,{
+chartInit=true;
+const c1=document.getElementById("whaleChart");
+if(c1){whaleChart=new Chart(c1,{
 type:"bar",data:{labels:[],datasets:[
-{label:"Volume $",data:[],backgroundColor:ctx1.createLinearGradient?(()=>{const g=ctx1.createLinearGradient(0,0,0,200);g.addColorStop(0,"rgba(56,189,248,.6)");g.addColorStop(1,"rgba(56,189,248,.1)");return g})():"rgba(56,189,248,.5)",borderRadius:4,yAxisID:"y"},
-{label:"Count",data:[],backgroundColor:"rgba(34,197,94,.4)",borderRadius:4,yAxisID:"y1"}
+{label:"Volume $",data:[],backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,"rgba(56,189,248,.55)");g.addColorStop(1,"rgba(56,189,248,.08)");return g},borderRadius:4,yAxisID:"y"},
+{label:"Count",data:[],backgroundColor:"rgba(34,197,94,.35)",borderRadius:4,yAxisID:"y1"}
 ]},options:{
 responsive:true,maintainAspectRatio:false,
 plugins:{legend:{labels:{color:"#6e7e94",font:{size:9},boxWidth:12,padding:8}}},
 scales:{
 x:{grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8}}},
 y:{beginAtZero:true,grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8},callback:v=>"$"+v.toLocaleString()}},
-y1:{beginAtZero:true,position:"right",grid:{display:false},ticks:{color:"#6e7e94",font:{size:8}}}
-}}})}
-const ctx2=document.getElementById("priceChart")?.getContext("2d");
-if(ctx2){priceChart=new Chart(ctx2,{
+y1:{beginAtZero:true,position:"right",grid:{display:false},ticks:{color:"#6e7e94",font:{size:8}}}}}})||null}
+const c2=document.getElementById("priceChart");
+if(c2){priceChart=new Chart(c2,{
 type:"line",data:{labels:[],datasets:[
-{label:"ETH",data:[],borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,.08)",fill:true,tension:.4,pointRadius:0,borderWidth:2},
-{label:"BNB",data:[],borderColor:"#eab308",backgroundColor:"rgba(234,179,8,.08)",fill:true,tension:.4,pointRadius:0,borderWidth:2}
+{label:"ETH",data:[],borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,.06)",fill:true,tension:.4,pointRadius:0,borderWidth:2},
+{label:"BNB",data:[],borderColor:"#eab308",backgroundColor:"rgba(234,179,8,.06)",fill:true,tension:.4,pointRadius:0,borderWidth:2}
 ]},options:{
 responsive:true,maintainAspectRatio:false,
 plugins:{legend:{labels:{color:"#6e7e94",font:{size:9},boxWidth:12,padding:8}}},
 scales:{
 x:{grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8},display:false}},
 y:{grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8},callback:v=>"$"+v.toLocaleString()}}
-}}})}}
+}}})||null}}
 
-// COPY
-function copyText(text){
-if(!text) return;navigator.clipboard.writeText(text).then(()=>{
+// === COPY ===
+function copyText(t){
+if(!t) return;
+navigator.clipboard.writeText(t).then(()=>{
 if(event&&event.target){event.target.classList.add("copied");setTimeout(()=>event.target.classList.remove("copied"),1500)}
-toast("Copied: "+text.slice(0,14)+"...");
-}).catch(()=>{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+toast("Copied: "+t.slice(0,14)+"...");
+}).catch(()=>{const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0";
 document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);toast("Copied!")})}
 
-// INIT
-initCharts();loadStatus();loadDashboardWhales();loadWallets();loadSettings();updateTicker();
+// === PARTICLES ===
+function initParticles(){
+const c=document.getElementById("particles"),ctx=c.getContext("2d");
+function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+resize();window.addEventListener("resize",resize);
+const pts=Array.from({length:80},()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5}));
+function anim(){ctx.clearRect(0,0,c.width,c.height);
+pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;
+ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle="rgba(56,189,248,.12)";ctx.fill()});
+for(let i=0;i<pts.length;i++){for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+if(d<150){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+ctx.strokeStyle=`rgba(56,189,248,${.08*(1-d/150)})`;ctx.lineWidth=.5;ctx.stroke()}}}
+requestAnimationFrame(anim)}
+initParticles()}
+
+// === INIT ===
+initCharts();loadHeader();loadStatus();loadDashboardWhales();loadWallets();loadSettings();
 setInterval(()=>{if(!monitoring)loadStatus()},15000);
 setInterval(()=>{if(!monitoring)loadDashboardWhales()},20000);
-setInterval(updateTicker,10000);
+setInterval(loadHeader,10000);
 </script>
 </body>
 </html>
