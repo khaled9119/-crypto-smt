@@ -142,7 +142,7 @@ class TokenAnalyzer:
     def _get_holder_concentration(self, chain_id, address):
         cfg = CHAINS[chain_id]
         if cfg["api_key"] and cfg["explorer"]:
-            url = f"{cfg['explorer']}"
+            url = cfg["explorer"]
             params = {
                 "module": "token",
                 "action": "tokenholderlist",
@@ -151,6 +151,8 @@ class TokenAnalyzer:
                 "offset": 10,
                 "apikey": cfg["api_key"],
             }
+            if "/v2/" in url:
+                params["chainid"] = cfg.get("chain_id", 1)
             try:
                 resp = requests.get(url, params=params, timeout=10)
                 data = resp.json()

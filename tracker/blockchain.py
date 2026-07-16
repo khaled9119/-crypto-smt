@@ -3,7 +3,7 @@ import requests
 from web3 import Web3
 from concurrent.futures import ThreadPoolExecutor
 
-from config import ETH_RPC, BSC_RPC, BASE_RPC, ETHERSCAN_API_KEY, BSCSCAN_API_KEY
+from config import ETH_RPC, BSC_RPC, BASE_RPC, ETHERSCAN_API_KEY, BSCSCAN_API_KEY as _BSCSCAN
 
 CHAINS = {
     "ethereum": {
@@ -14,24 +14,27 @@ CHAINS = {
         "explorer": "https://api.etherscan.io/api",
         "api_key": ETHERSCAN_API_KEY,
         "native_usd": "ethereum",
+        "chain_id": 1,
     },
     "bsc": {
         "rpc": BSC_RPC,
         "name": "BSC",
         "symbol": "BNB",
         "decimals": 18,
-        "explorer": "https://api.bscscan.com/api",
-        "api_key": BSCSCAN_API_KEY,
+        "explorer": "https://api.bscscan.com/api" if _BSCSCAN else "https://api.etherscan.io/v2/api",
+        "api_key": _BSCSCAN if _BSCSCAN else ETHERSCAN_API_KEY,
         "native_usd": "binancecoin",
+        "chain_id": 56,
     },
     "base": {
         "rpc": BASE_RPC,
         "name": "Base",
         "symbol": "ETH",
         "decimals": 18,
-        "explorer": None,
-        "api_key": None,
+        "explorer": "https://api.etherscan.io/v2/api" if ETHERSCAN_API_KEY else None,
+        "api_key": ETHERSCAN_API_KEY if ETHERSCAN_API_KEY else None,
         "native_usd": "ethereum",
+        "chain_id": 8453,
     },
 }
 
@@ -170,56 +173,49 @@ def get_token_price(token_address, chain_id):
     return 0
 
 
-def get_explorer_txns(address, chain_id, api_key, page=1, offset=50):
-    cfg = CHAINS[chain_id]
-    if not api_key or not cfg["explorer"]:
-        return _rpc_native_txns(address, chain_id, offset)
-    url = f"{cfg['explorer']}"
-    params = {
-        "module": "account",
-        "action": "txlist",
-        "address": address,
-        "startblock": 0,
-        "endblock": 99999999,
-        "page": page,
-        "offset": offset,
-        "sort": "desc",
-        "apikey": api_key,
-    }
+def _explorer_params(cfg, api_key, extra=None):
+    p = {"apikey": api_key}
+    if cfg.get("explorer", "") and "/v2/" in cfg["explorer"]:
+        p["chainid"] = cfg.get("chain_id", 1)
+    if extra:
+        p.update(extra)
+    return p
+
+def _explorer_get(url, params, fallback_func, address, chain_id, offset=50):
     try:
         resp = requests.get(url, params=params, timeout=10)
         data = resp.json()
         if data.get("status") == "1":
             return data.get("result", [])
+        if isinstance(data, list):
+            return data
     except Exception:
         pass
-    return _rpc_native_txns(address, chain_id, offset)
+    return fallback_func(address, chain_id, offset)
 
+def get_explorer_txns(address, chain_id, api_key, page=1, offset=50):
+    cfg = CHAINS[chain_id]
+    if not api_key or not cfg["explorer"]:
+        return _rpc_native_txns(address, chain_id, offset)
+    url = cfg["explorer"]
+    params = _explorer_params(cfg, api_key, {
+        "module": "account", "action": "txlist",
+        "address": address, "startblock": 0, "endblock": 99999999,
+        "page": page, "offset": offset, "sort": "desc",
+    })
+    return _explorer_get(url, params, _rpc_native_txns, address, chain_id, offset)
 
 def get_token_txns(address, chain_id, api_key, page=1, offset=50):
     cfg = CHAINS[chain_id]
     if not api_key or not cfg["explorer"]:
         return _rpc_token_txns(address, chain_id, offset)
-    url = f"{cfg['explorer']}"
-    params = {
-        "module": "account",
-        "action": "tokentx",
-        "address": address,
-        "startblock": 0,
-        "endblock": 99999999,
-        "page": page,
-        "offset": offset,
-        "sort": "desc",
-        "apikey": api_key,
-    }
-    try:
-        resp = requests.get(url, params=params, timeout=10)
-        data = resp.json()
-        if data.get("status") == "1":
-            return data.get("result", [])
-    except Exception:
-        pass
-    return _rpc_token_txns(address, chain_id, offset)
+    url = cfg["explorer"]
+    params = _explorer_params(cfg, api_key, {
+        "module": "account", "action": "tokentx",
+        "address": address, "startblock": 0, "endblock": 99999999,
+        "page": page, "offset": offset, "sort": "desc",
+    })
+    return _explorer_get(url, params, _rpc_token_txns, address, chain_id, offset)
 
 
 def _rpc_native_txns(address, chain_id, limit=50):
