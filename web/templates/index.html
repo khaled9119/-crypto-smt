@@ -804,7 +804,7 @@ if(m.gainers?.length){ga.innerHTML=m.gainers.map(x=>`<div class="token-item" onc
 <br><span style="font-size:11px;color:var(--green)">+${x.change_24h}%</span></div>
 </div>`).join("")}else{ga.innerHTML='<div class="empty-state"><div class="icon">📈</div><p>No data</p></div>'}
 // === BINANCE ===
-document.getElementById("binanceUpdate1").textContent=`${b.total_pairs||0} USDT pairs`;
+document.getElementById("binanceUpdate1").textContent=b.total_pairs?`${b.total_pairs} USDT pairs`:b.source==="coingecko_fallback"?"📊 CoinGecko Data":"0 USDT pairs";
 // Binance Gainers
 const bg=document.getElementById("binanceGainers");
 if(b.gainers?.length){bg.innerHTML=b.gainers.slice(0,20).map(x=>`<div class="token-item" onclick="switchToScan('${x.symbol}')">

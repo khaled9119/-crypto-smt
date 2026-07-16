@@ -473,57 +473,80 @@ BINANCE_CACHE_TIME = 0
 def api_binance_markets():
     global BINANCE_CACHE, BINANCE_CACHE_TIME
     now = time.time()
-    if now - BINANCE_CACHE_TIME < 30 and BINANCE_CACHE:
+    if now - BINANCE_CACHE_TIME < 60 and BINANCE_CACHE:
         return jsonify(BINANCE_CACHE)
     result = {"gainers": [], "losers": [], "volume_surge": [], "new_pairs": []}
+    # Binance API often blocks cloud IPs (451). Fallback to CoinGecko.
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        r = requests.get("https://api.binance.com/api/v3/ticker/24hr", headers=headers, timeout=15)
-        if r.status_code != 200:
-            result["error"] = f"Binance API returned {r.status_code}"
-            BINANCE_CACHE = result
-            BINANCE_CACHE_TIME = now
-            return jsonify(result)
-        all_data = r.json()
-        # Filter USDT pairs only
-        usdt_pairs = [t for t in all_data if t.get("symbol", "").endswith("USDT")]
-        # Sort by price change percent
-        with_change = []
-        for t in usdt_pairs:
-            try:
-                chg = float(t.get("priceChangePercent", 0))
-                vol = float(t.get("quoteVolume", 0))
-                price = float(t.get("lastPrice", 0))
-                if vol > 100000 and price > 0:  # Min $100k volume
-                    with_change.append({
-                        "symbol": t["symbol"].replace("USDT", ""),
-                        "price": price,
-                        "change_24h": round(chg, 2),
-                        "volume": vol,
-                        "high": float(t.get("highPrice", 0)),
-                        "low": float(t.get("lowPrice", 0)),
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get("https://api.binance.com/api/v3/ticker/24hr", headers=headers, timeout=10)
+        if r.status_code == 200:
+            all_data = r.json()
+            usdt_pairs = [t for t in all_data if t.get("symbol", "").endswith("USDT")]
+            with_change = []
+            for t in usdt_pairs:
+                try:
+                    chg = float(t.get("priceChangePercent", 0))
+                    vol = float(t.get("quoteVolume", 0))
+                    price = float(t.get("lastPrice", 0))
+                    if vol > 100000 and price > 0:
+                        with_change.append({
+                            "symbol": t["symbol"].replace("USDT", ""),
+                            "price": price,
+                            "change_24h": round(chg, 2),
+                            "volume": vol,
+                            "high": float(t.get("highPrice", 0)),
+                            "low": float(t.get("lowPrice", 0)),
+                        })
+                except Exception:
+                    continue
+            sorted_gainers = sorted(with_change, key=lambda x: x["change_24h"], reverse=True)
+            result["gainers"] = [c for c in sorted_gainers if c["change_24h"] > 0][:20]
+            sorted_losers = sorted(with_change, key=lambda x: x["change_24h"])
+            result["losers"] = [c for c in sorted_losers if c["change_24h"] < 0][:20]
+            for c in sorted_gainers:
+                if c["volume"] > 5000000 and c["change_24h"] > 5:
+                    c["surge_score"] = round(c["volume"] / (c["price"] * 1000), 0)
+                    result["volume_surge"].append(c)
+                    if len(result["volume_surge"]) >= 10:
+                        break
+            result["total_pairs"] = len(usdt_pairs)
+            result["total_gainers"] = len(result["gainers"])
+            result["total_losers"] = len(result["losers"])
+    except Exception:
+        pass
+    # If Binance returned empty/error, fallback to CoinGecko data
+    if not result["gainers"] and not result["losers"]:
+        result["source"] = "coingecko_fallback"
+        try:
+            r = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=volume_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h", timeout=10)
+            if r.status_code == 200:
+                coins = r.json()
+                for c in coins:
+                    chg = c.get("price_change_percentage_24h") or 0
+                    vol = c.get("total_volume") or 0
+                    p = c.get("current_price") or 0
+                    result["gainers"].append({
+                        "symbol": c.get("symbol", "").upper(), "price": p,
+                        "change_24h": round(chg, 2), "volume": vol,
+                        "name": c.get("name", ""), "image": c.get("image", ""),
                     })
-            except Exception:
-                continue
-        # Gainers
-        sorted_gainers = sorted(with_change, key=lambda x: x["change_24h"], reverse=True)
-        result["gainers"] = [c for c in sorted_gainers if c["change_24h"] > 0][:20]
-        # Losers
-        sorted_losers = sorted(with_change, key=lambda x: x["change_24h"])
-        result["losers"] = [c for c in sorted_losers if c["change_24h"] < 0][:20]
-        # Volume surge (highest volume relative to usual - approximate by vol/avg)
-        for c in sorted_gainers:
-            if c["volume"] > 5000000 and c["change_24h"] > 5:  # >$5M vol and >5% up
-                c["surge_score"] = round(c["volume"] / (c["price"] * 1000), 0)
-                result["volume_surge"].append(c)
-                if len(result["volume_surge"]) >= 10:
-                    break
-        # Count total
-        result["total_pairs"] = len(usdt_pairs)
-        result["total_gainers"] = len(result["gainers"])
-        result["total_losers"] = len(result["losers"])
-    except Exception as e:
-        result["error"] = str(e)
+                result["gainers"].sort(key=lambda x: x["change_24h"], reverse=True)
+                result["gainers"] = [c for c in result["gainers"] if c["change_24h"] > 0][:20]
+                result["losers"] = sorted(result["gainers"], key=lambda x: x["change_24h"])[:15] if result["gainers"] else []
+                for c in coins:
+                    vol = c.get("total_volume") or 0
+                    p = c.get("current_price") or 0
+                    chg = c.get("price_change_percentage_24h") or 0
+                    if vol > 5_000_000 and chg > 5:
+                        result["volume_surge"].append({
+                            "symbol": c.get("symbol", "").upper(), "price": p,
+                            "change_24h": round(chg, 2), "volume": vol,
+                        })
+                        if len(result["volume_surge"]) >= 10:
+                            break
+        except Exception:
+            pass
     BINANCE_CACHE = result
     BINANCE_CACHE_TIME = now
     return jsonify(result)
