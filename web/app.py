@@ -386,6 +386,68 @@ def api_balance():
     return jsonify(result)
 
 
+# ===== MARKETS (Top Gainers / Losers / New Listings / Trending) =====
+
+MARKETS_CACHE = {}
+MARKETS_CACHE_TIME = 0
+
+@ app.route("/api/markets")
+def api_markets():
+    global MARKETS_CACHE, MARKETS_CACHE_TIME
+    now = time.time()
+    if now - MARKETS_CACHE_TIME < 60 and MARKETS_CACHE:
+        return jsonify(MARKETS_CACHE)
+    result = {"gainers": [], "losers": [], "trending": [], "new_listings": []}
+    try:
+        # CoinGecko trending
+        r = requests.get("https://api.coingecko.com/api/v3/search/trending", timeout=8)
+        if r.status_code == 200:
+            coins = r.json().get("coins", [])[:10]
+            for c in coins:
+                item = c.get("item", {})
+                p = item.get("price_btc", 0)
+                result["trending"].append({
+                    "name": item.get("name", "?"),
+                    "symbol": item.get("symbol", "?").upper(),
+                    "rank": item.get("market_cap_rank", 0),
+                    "price_btc": round(p, 8) if p else 0,
+                    "thumb": item.get("thumb", ""),
+                })
+    except Exception:
+        pass
+    try:
+        # Top movers (gainers/losers) from CoinGecko
+        r = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=volume_desc&per_page=50&page=1&sparkline=false", timeout=8)
+        if r.status_code == 200:
+            coins = r.json()
+            sorted_by_change = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0) or 0, reverse=True)
+            for c in sorted_by_change[:10]:
+                p = c.get("current_price", 0)
+                chg = c.get("price_change_percentage_24h", 0) or 0
+                vol = c.get("total_volume", 0) or 0
+                result["gainers"].append({
+                    "name": c.get("name", "?"), "symbol": c.get("symbol", "?").upper(),
+                    "price": p, "change_24h": round(chg, 2),
+                    "volume": vol, "market_cap": c.get("market_cap", 0) or 0,
+                    "image": c.get("image", ""),
+                })
+            losers = sorted(coins, key=lambda x: x.get("price_change_percentage_24h", 0) or 0)[:10]
+            for c in losers:
+                p = c.get("current_price", 0)
+                chg = c.get("price_change_percentage_24h", 0) or 0
+                result["losers"].append({
+                    "name": c.get("name", "?"), "symbol": c.get("symbol", "?").upper(),
+                    "price": p, "change_24h": round(chg, 2),
+                    "volume": c.get("total_volume", 0) or 0,
+                    "image": c.get("image", ""),
+                })
+    except Exception:
+        pass
+    MARKETS_CACHE = result
+    MARKETS_CACHE_TIME = now
+    return jsonify(result)
+
+
 def main():
     import sys
     if hasattr(sys.stdout, 'reconfigure'):
