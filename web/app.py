@@ -477,8 +477,12 @@ def api_binance_markets():
         return jsonify(BINANCE_CACHE)
     result = {"gainers": [], "losers": [], "volume_surge": [], "new_pairs": []}
     try:
-        r = requests.get("https://api.binance.com/api/v3/ticker/24hr", timeout=10)
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get("https://api.binance.com/api/v3/ticker/24hr", headers=headers, timeout=15)
         if r.status_code != 200:
+            result["error"] = f"Binance API returned {r.status_code}"
+            BINANCE_CACHE = result
+            BINANCE_CACHE_TIME = now
             return jsonify(result)
         all_data = r.json()
         # Filter USDT pairs only
