@@ -3,149 +3,198 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🐋 Crypto Smart Money Tracker Pro — Whales · Token Scanner · Smart Wallets</title>
+<title>Crypto Smart Money Tracker Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0e14;--card:#121820;--card2:#1a2430;--input:#1e2a38;--fg:#e6edf3;--dim:#6e7e94;--border:#1e2a38;--green:#22c55e;--yellow:#eab308;--red:#ef4444;--cyan:#38bdf8;--orange:#fb923c;--purple:#a78bfa}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+:root{
+--bg:#080c14;--bg2:#0d1520;--card:rgba(18,24,32,.85);--card-hover:rgba(26,36,48,.9);
+--border:rgba(56,189,248,.12);--border-active:rgba(56,189,248,.35);--fg:#e6edf3;--dim:#5a6a80;
+--green:#22c55e;--green-glow:rgba(34,197,94,.15);--yellow:#eab308;--red:#ef4444;
+--cyan:#38bdf8;--cyan-glow:rgba(56,189,248,.12);--purple:#a78bfa;--orange:#fb923c;
+--radius:14px;--radius-sm:8px;--shadow:0 8px 32px rgba(0,0,0,.3);--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace
+}
+body{font-family:var(--font);background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
+background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,.03) 0%,transparent 50%),
+radial-gradient(ellipse at 70% 80%,rgba(168,85,247,.03) 0%,transparent 50%);
+pointer-events:none;z-index:0;animation:bgShift 20s ease-in-out infinite}
+@keyframes bgShift{0%,100%{transform:translate(0,0)}50%{transform:translate(-2%,-1%)}}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 ::selection{background:var(--cyan);color:#000}
-.container{max-width:1440px;margin:0 auto;padding:18px}
+.container{max-width:1440px;margin:0 auto;padding:16px 20px;position:relative;z-index:1}
 
 /* Header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 16px;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;gap:12px}
-.header-left{display:flex;align-items:center;gap:14px}
-.header-left h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill:transparent}
-.header-left .version{font-size:10px;color:var(--dim);background:var(--card);padding:2px 8px;border-radius:4px;border:1px solid var(--border)}
-.prices{display:flex;gap:14px;font-size:12px;align-items:center}
-.prices .price-item{display:flex;align-items:center;gap:5px}
-.prices .price-item .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
-.prices .price-item .val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill:transparent;letter-spacing:-.5px}
+.logo-sub{font-size:9px;color:var(--dim);background:var(--card);padding:2px 10px;border-radius:20px;border:1px solid var(--border);font-weight:600;letter-spacing:.5px}
+.prices{display:flex;gap:16px;font-size:12px;align-items:center;flex-wrap:wrap}
+.price-item{display:flex;align-items:center;gap:6px;padding:4px 12px;background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(8px)}
+.price-item .dot{width:5px;height:5px;border-radius:50%}
+.price-item .sym{color:var(--dim);font-weight:500}
+.price-item .val{font-family:var(--mono);font-size:13px;font-weight:600}
 .price-up{color:var(--green)}.price-down{color:var(--red)}
 
+/* Live ticker */
+.ticker{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 16px;margin-bottom:14px;overflow:hidden;backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px}
+.ticker-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);white-space:nowrap}
+.ticker-wrap{overflow:hidden;flex:1;position:relative;height:20px}
+.ticker-inner{display:flex;gap:40px;animation:tick 30s linear infinite;position:absolute;white-space:nowrap}
+.ticker-item{font-size:12px;color:var(--dim);font-family:var(--mono)}
+.ticker-item b{color:var(--fg)}
+.ticker-item .val{font-weight:600;margin-left:4px}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
 /* Nav */
-.nav{display:flex;gap:3px;margin-bottom:18px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:2px}
-.nav button{padding:10px 20px;border:none;background:transparent;color:var(--dim);border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;font-family:'Inter',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
-.nav button:hover{background:var(--card);color:var(--fg)}
-.nav button.active{background:var(--card);color:var(--cyan);border-bottom-color:var(--cyan)}
+.nav{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:4px;backdrop-filter:blur(8px)}
+.nav button{padding:10px 18px;border:none;background:transparent;color:var(--dim);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;transition:all .25s;font-family:var(--font);display:flex;align-items:center;gap:6px}
+.nav button:hover{background:rgba(56,189,248,.08);color:var(--fg)}
+.nav button.active{background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(168,85,247,.1));color:var(--cyan)}
+@media(max-width:600px){.nav button{padding:8px 12px;font-size:11px}.nav button span.nav-label{display:none}}
 
 /* Tabs */
-.tab{display:none;animation:fadeIn .3s ease}
+.tab{display:none;animation:tabIn .35s ease}
 .tab.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-/* Stats Grid */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}
-.stat-card:hover{border-color:var(--cyan)}
-.stat-card .label{font-size:11px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
-.stat-card .value{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace}
-.stat-card .sub{font-size:11px;color:var(--dim);margin-top:4px}
-.stat-card .icon{font-size:20px;margin-bottom:6px}
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:all .3s;backdrop-filter:blur(8px);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .3s}
+.stat-card:hover::before{opacity:1}
+.stat-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.stat-card .icon{font-size:18px;margin-bottom:6px}
+.stat-card .label{font-size:10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.stat-card .value{font-size:24px;font-weight:700;font-family:var(--mono)}
+.stat-card .sub{font-size:10px;color:var(--dim);margin-top:3px}
+.stat-card.cyan::before{background:var(--cyan)}.stat-card.green::before{background:var(--green)}
+.stat-card.yellow::before{background:var(--yellow)}.stat-card.purple::before{background:var(--purple)}
 
 /* Cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;transition:border-color .2s}
-.card:hover{border-color:rgba(56,189,248,.2)}
-.card-header{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.card-header .title{display:flex;align-items:center;gap:8px}
-.card-body{padding:16px 18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;transition:all .3s;backdrop-filter:blur(8px)}
+.card:hover{border-color:var(--border-active)}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-header .title{display:flex;align-items:center;gap:8px;color:var(--fg)}
+.card-body{padding:14px 18px}
+.card-body.no-pad{padding:0}
 
 /* Tables */
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
-th:hover{color:var(--cyan)}
-td{padding:8px 12px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:9px 12px;color:var(--dim);font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;font-size:10px;text-transform:uppercase;letter-spacing:.5px;transition:color .2s}
+th:hover{color:var(--cyan)}th.sorted{color:var(--cyan)}
+td{padding:7px 12px;border-bottom:1px solid rgba(30,42,56,.4);font-family:var(--mono);font-size:11px;transition:background .15s}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(56,189,248,.04)}
+tbody tr{transition:background .15s}
+tbody tr:hover td{background:rgba(56,189,248,.04)}
 
 /* Badges */
-.badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600}
-.badge.eth{background:rgba(56,189,248,.15);color:var(--cyan)}
-.badge.bsc{background:rgba(234,179,8,.15);color:var(--yellow)}
-.badge.base{background:rgba(130,71,229,.15);color:var(--purple)}
+.badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px}
+.badge.eth{background:rgba(56,189,248,.12);color:var(--cyan)}
+.badge.bsc{background:rgba(234,179,8,.12);color:var(--yellow)}
+.badge.base{background:rgba(168,85,247,.12);color:var(--purple)}
 .badge.low{background:rgba(34,197,94,.12);color:var(--green)}
 .badge.medium{background:rgba(234,179,8,.12);color:var(--yellow)}
 .badge.high{background:rgba(239,68,68,.12);color:var(--red)}
 
 /* Forms */
-input,select,textarea{padding:10px 14px;background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .2s;width:100%}
-input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
+input,select{padding:9px 14px;background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:13px;font-family:var(--font);outline:none;transition:all .25s;width:100%}
+input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.08)}
 ::placeholder{color:var(--dim)}
 .form-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 
-/* Copyable Addresses */
-.addr{cursor:pointer;position:relative;transition:color .2s;border-bottom:1px dashed transparent}
+/* Copyable */
+.addr{cursor:pointer;position:relative;transition:all .2s;border-bottom:1px dashed transparent;font-weight:500}
 .addr:hover{color:var(--cyan)!important;border-bottom-color:var(--cyan)}
-.addr:hover::after{content:"📋";font-size:10px;margin-left:4px;opacity:.7}
 .addr.copied{color:var(--green)!important}
-.addr.copied:hover::after{content:"✅"}
-.tx-hash{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);cursor:pointer;transition:color .2s}
+.tx-hash{font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer;transition:color .2s}
 .tx-hash:hover{color:var(--cyan)}
+.hash-val{max-width:80px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle}
 
 /* Buttons */
-.btn{padding:9px 20px;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.btn-primary{background:var(--cyan);color:#000}.btn-primary:hover{opacity:.85;transform:translateY(-1px)}
-.btn-success{background:var(--green);color:#000}.btn-success:hover{opacity:.85;transform:translateY(-1px)}
-.btn-warning{background:var(--yellow);color:#000}.btn-warning:hover{opacity:.85}
-.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.85}
-.btn-ghost{background:var(--input);color:var(--dim);border:1px solid var(--border)}.btn-ghost:hover{color:var(--fg);border-color:var(--cyan)}
-.btn-sm{padding:6px 14px;font-size:11px}
+.btn{padding:8px 18px;border:none;border-radius:var(--radius-sm);font-weight:600;font-size:11px;cursor:pointer;transition:all .2s;font-family:var(--font);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),#2563eb);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(56,189,248,.25)}
+.btn-success{background:linear-gradient(135deg,var(--green),#16a34a);color:#000}
+.btn-success:hover{opacity:.9;transform:translateY(-1px)}
+.btn-danger{background:linear-gradient(135deg,var(--red),#dc2626);color:#fff}
+.btn-danger:hover{opacity:.9}
+.btn-ghost{background:rgba(30,42,56,.6);color:var(--dim);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--fg);border-color:var(--cyan);background:rgba(56,189,248,.08)}
+.btn-sm{padding:5px 12px;font-size:10px}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-/* Chain Dots */
-.chain-status{display:flex;gap:12px;align-items:center}
-.chain-dot{display:flex;align-items:center;gap:4px;font-size:12px}
-.chain-dot .dot{width:7px;height:7px;border-radius:50%}
-.dot.on{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.4)}
-.dot.off{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,.4)}
+/* Chain status */
+.chain-status{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.chain-dot{display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px}
+.chain-dot .dot{width:6px;height:6px;border-radius:50%}
+.dot.on{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.4)}
+.dot.off{background:var(--red);box-shadow:0 0 8px rgba(239,68,68,.4)}
 
-/* Result Box */
-.result-box{background:var(--input);border:1px solid var(--border);border-radius:10px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:450px;overflow-y:auto;margin-top:14px}
-.result-box .hl{color:var(--cyan)}.result-box .hlg{color:var(--green)}.result-box .hlr{color:var(--red)}.result-box .hly{color:var(--yellow)}
+/* Result box */
+.result-box{background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-family:var(--mono);font-size:11px;line-height:2;white-space:pre-wrap;max-height:500px;overflow-y:auto;margin-top:12px}
+.result-box .hl{color:var(--cyan)}
+.result-box .hlg{color:var(--green)}
+.result-box .hlr{color:var(--red)}
+.result-box .hly{color:var(--yellow)}
 
-/* Score Bar */
-.score-bar{display:flex;gap:2px;margin:6px 0}
-.score-bar .seg{height:14px;border-radius:2px;flex:1}
-.score-bar .seg.on{background:var(--green)}.score-bar .seg.warn{background:var(--yellow)}.score-bar .seg.danger{background:var(--red)}.score-bar .seg.off{background:var(--border)}
+/* Score bar */
+.score-bar{display:flex;gap:3px;margin:8px 0}
+.score-bar .seg{height:12px;border-radius:3px;flex:1}
+.score-bar .seg.on{background:var(--green)}
+.score-bar .seg.warn{background:var(--yellow)}
+.score-bar .seg.danger{background:var(--red)}
+.score-bar .seg.off{background:rgba(30,42,56,.6)}
 
-/* Grid layouts */
+/* Grid */
 .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 @media(max-width:1024px){.grid-2{grid-template-columns:1fr}}
-@media(max-width:768px){.grid-3{grid-template-columns:1fr}.header{flex-direction:column;align-items:start}}
+@media(max-width:768px){.grid-3{grid-template-columns:1fr}.header{flex-direction:column;align-items:stretch}}
 
 /* Whale popup */
-.whale-alert{position:fixed;top:20px;right:20px;background:var(--card);border:1px solid var(--cyan);border-radius:12px;padding:14px 20px;z-index:999;animation:slideIn .4s ease;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.whale-alert{position:fixed;top:20px;right:20px;background:var(--card);border:1px solid var(--cyan);border-radius:var(--radius);padding:14px 20px;z-index:999;animation:slideIn .4s ease;max-width:380px;box-shadow:var(--shadow);backdrop-filter:blur(12px)}
 @keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
 .whale-alert .wa-title{font-weight:700;font-size:13px;color:var(--cyan);margin-bottom:4px}
-.whale-alert .wa-detail{font-size:12px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.whale-alert .wa-detail{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.whale-alert .wa-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px}
 
 /* Empty state */
-.empty-state{text-align:center;padding:40px 20px;color:var(--dim)}
-.empty-state .icon{font-size:40px;margin-bottom:10px}
-.empty-state p{font-size:14px}
+.empty-state{text-align:center;padding:30px 20px;color:var(--dim)}
+.empty-state .icon{font-size:32px;margin-bottom:8px;opacity:.5}
+.empty-state p{font-size:13px}
 
-/* Loading spinner */
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+/* Loading */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 22px;font-size:13px;z-index:999;animation:toastIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 20px;font-size:12px;z-index:999;animation:toastIn .3s ease;box-shadow:var(--shadow);backdrop-filter:blur(12px);display:flex;align-items:center;gap:8px}
 @keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-/* Scrollable lists */
+/* Token items */
 .scroll-list{max-height:320px;overflow-y:auto}
-.token-item{padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12px;cursor:pointer;transition:background .2s;border-radius:4px;padding:8px 10px;margin:0 -10px}
-.token-item:hover{background:var(--input)}
+.token-item{padding:10px 14px;border-bottom:1px solid rgba(30,42,56,.4);display:flex;justify-content:space-between;align-items:center;font-size:12px;cursor:pointer;transition:background .2s;border-radius:4px;margin:0 -4px}
+.token-item:hover{background:rgba(56,189,248,.04)}
 
-/* Monitor indicator */
-.monitor-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
+/* Monitor */
+.monitor-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Tooltip */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+6px);left:50%;transform:translateX(-50%);background:#1a2430;color:var(--fg);padding:4px 10px;border-radius:4px;font-size:10px;white-space:nowrap;border:1px solid var(--border);z-index:10}
+
+/* Chart container */
+.chart-wrap{position:relative;height:200px}
+
+/* Sort indicator */
+th .sort-arrow{opacity:.3;margin-left:3px;font-size:9px}
+th:hover .sort-arrow{opacity:1}
 </style>
 </head>
 <body>
@@ -153,71 +202,72 @@ input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,1
 
 <div class="header">
 <div class="header-left">
-<h1>🐋 Crypto Smart Money Tracker</h1>
-<span class="version">PRO v2.0</span>
+<div class="logo">SmartMoneyTracker</div>
+<span class="logo-sub">PRO v2.0</span>
 </div>
 <div class="prices" id="prices"></div>
 </div>
 
-<div class="nav" id="nav">
-<button class="active" data-tab="dashboard">📊 Dashboard</button>
-<button data-tab="whales">🐋 Whales</button>
-<button data-tab="analyze">🔍 Token Scan</button>
-<button data-tab="wallets">👛 Smart Wallets</button>
-<button data-tab="settings">⚙️</button>
+<div class="ticker">
+<span class="ticker-label">Live Feed</span>
+<div class="ticker-wrap"><div class="ticker-inner" id="ticker-content">Loading...</div></div>
 </div>
 
-<!-- ==================== DASHBOARD ==================== -->
+<div class="nav" id="nav">
+<button class="active" data-tab="dashboard">📊 <span class="nav-label">Dashboard</span></button>
+<button data-tab="whales">🐋 <span class="nav-label">Whales</span></button>
+<button data-tab="analyze">🔍 <span class="nav-label">Token Scan</span></button>
+<button data-tab="wallets">👛 <span class="nav-label">Wallets</span></button>
+<button data-tab="settings">⚙️ <span class="nav-label">Settings</span></button>
+</div>
+
+<!-- DASHBOARD -->
 <div id="tab-dashboard" class="tab active">
 <div class="chain-status" style="margin-bottom:14px" id="chain-status"></div>
 <div class="stats" id="main-stats"></div>
-
 <div class="grid-2">
 <div class="card">
-<div class="card-header"><span class="title">🐋 Whale Activity (30m)</span><span id="whale-chart-time" style="font-size:11px;color:var(--dim)"></span></div>
-<div class="card-body"><canvas id="whaleChart" height="180"></canvas></div>
+<div class="card-header"><span class="title">🐋 Whale Activity</span><span id="whale-chart-time" style="font-size:10px;color:var(--dim)"></span></div>
+<div class="card-body"><div class="chart-wrap"><canvas id="whaleChart"></canvas></div></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">💰 Price Chart</span></div>
-<div class="card-body"><canvas id="priceChart" height="180"></canvas></div>
+<div class="card-header"><span class="title">💰 Price (ETH / BNB)</span></div>
+<div class="card-body"><div class="chart-wrap"><canvas id="priceChart"></canvas></div></div>
 </div>
 </div>
-
 <div class="grid-2">
 <div class="card">
-<div class="card-header"><span class="title">🐋 Latest Whale Moves</span> <button class="btn btn-ghost btn-sm" onclick="loadDashboardWhales()">⟳</button></div>
-<div class="card-body" style="padding:0">
-<div class="table-wrap"><table><thead><tr><th>Time</th><th>Chain</th><th>Amount</th><th>USD</th><th>From</th><th>To</th></tr></thead>
-<tbody id="dash-whales"></tbody></table></div>
-</div>
+<div class="card-header"><span title="Latest Whale Moves" style="display:flex;align-items:center;gap:8px">🐋 Recent Whales</span> <button class="btn btn-ghost btn-sm" onclick="loadDashboardWhales()">⟳</button></div>
+<div class="card-body no-pad"><div class="table-wrap"><table><thead><tr><th>Time</th><th>Chain</th><th>Amount</th><th>USD</th><th>From</th><th>To</th></tr></thead>
+<tbody id="dash-whales"></tbody></table></div></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">👛 Top Smart Wallets</span></div>
-<div class="card-body scroll-list" id="dash-wallets"><div class="empty-state"><p>No wallets tracked yet</p></div></div>
+<div class="card-header"><span class="title">👛 Smart Wallets</span></div>
+<div class="card-body scroll-list" id="dash-wallets"><div class="empty-state"><div class="icon">👛</div><p>No wallets tracked yet</p></div></div>
 </div>
 </div>
 </div>
 
-<!-- ==================== WHALES ==================== -->
+<!-- WHALES -->
 <div id="tab-whales" class="tab">
 <div class="card">
 <div class="card-header">
-<span class="title">🐋 All Whale Transactions</span>
-<div style="display:flex;gap:6px;flex-wrap:wrap">
+<span class="title">🐋 Whale Transactions</span>
+<div style="display:flex;gap:5px;flex-wrap:wrap">
 <button class="btn btn-success btn-sm" onclick="startMonitor()" id="monBtn">▶ Monitor</button>
-<button class="btn btn-warning btn-sm" onclick="clearWhales()">🗑 Clear</button>
+<button class="btn btn-danger btn-sm" onclick="clearWhales()">🗑 Clear</button>
 <button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/whales')">📥 CSV</button>
 </div>
 </div>
-<div style="padding:8px 18px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;flex-wrap:wrap" id="whale-info">
+<div style="padding:6px 18px;font-size:11px;color:var(--dim);display:flex;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid var(--border)">
 <span>Click column headers to sort</span>
-<span id="monitor-status">● Idle</span>
+<span id="monitor-status">○ Idle</span>
 </div>
 <div class="table-wrap"><table><thead><tr>
-<th onclick="sortTable('all-whales',0)">Time ▾</th>
+<th onclick="sortTable('all-whales',0)">Time <span class="sort-arrow">▼</span></th>
 <th onclick="sortTable('all-whales',1)">Chain</th>
 <th onclick="sortTable('all-whales',2)">Amount</th>
-<th onclick="sortTable('all-whales',3)">USD Value ▾</th>
+<th onclick="sortTable('all-whales',3)">USD <span class="sort-arrow">▼</span></th>
 <th onclick="sortTable('all-whales',4)">From</th>
 <th onclick="sortTable('all-whales',5)">To</th>
 <th>Tx</th>
@@ -225,14 +275,14 @@ input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,1
 </div>
 </div>
 
-<!-- ==================== TOKEN SCAN ==================== -->
+<!-- TOKEN SCAN -->
 <div id="tab-analyze" class="tab">
 <div class="grid-2">
 <div class="card">
 <div class="card-header"><span class="title">🔍 Token Risk Scanner</span></div>
 <div class="card-body">
 <div class="form-row">
-<div style="flex:3;min-width:200px"><input id="token-addr" placeholder="Token contract address 0x..."></div>
+<div style="flex:3;min-width:200px"><input id="token-addr" placeholder="0x... token contract address"></div>
 <div style="flex:0 0 120px"><select id="token-chain"><option value="ethereum">Ethereum</option><option value="bsc">BSC</option><option value="base">Base</option></select></div>
 <button class="btn btn-primary" onclick="analyzeToken()" id="analyze-btn">🔍 Scan</button>
 </div>
@@ -240,54 +290,54 @@ input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,1
 </div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">📋 Scan History</span></div>
-<div class="card-body scroll-list" id="recent-tokens" style="padding:8px 16px"><div class="empty-state"><p>No tokens scanned yet</p></div></div>
+<div class="card-header"><span class="title">📋 History</span></div>
+<div class="card-body scroll-list" id="recent-tokens" style="padding:8px 16px"><div class="empty-state"><div class="icon">📋</div><p>No tokens scanned yet</p></div></div>
 </div>
 </div>
 </div>
 
-<!-- ==================== SMART WALLETS ==================== -->
+<!-- WALLETS -->
 <div id="tab-wallets" class="tab">
 <div class="card">
 <div class="card-header">
 <span class="title">👛 Smart Wallet Tracker</span>
-<div style="display:flex;gap:6px;flex-wrap:wrap">
+<div style="display:flex;gap:5px;flex-wrap:wrap">
 <button class="btn btn-ghost btn-sm" onclick="loadWallets()">⟳ Refresh</button>
 <button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/wallets')">📥 CSV</button>
 </div>
 </div>
 <div class="card-body">
 <div class="form-row">
-<div style="flex:3;min-width:200px"><input id="wallet-addr" placeholder="Wallet address 0x..."></div>
-<button class="btn btn-success" onclick="trackWallet()" id="track-btn">👁 Track Wallet</button>
+<div style="flex:3;min-width:200px"><input id="wallet-addr" placeholder="0x... wallet address to track"></div>
+<button class="btn btn-success" onclick="trackWallet()" id="track-btn">👁 Track</button>
 </div>
 </div>
-<div class="table-wrap"><table><thead><tr>
-<th>Wallet</th><th>Chain</th><th>Trades</th><th>Profit</th><th>Win Rate</th><th>Top Tokens</th>
-</tr></thead><tbody id="wallet-table-body"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Wallet</th><th>Chain</th><th>Trades</th><th>Profit</th><th>Win Rate</th><th>Top Tokens</th></tr></thead>
+<tbody id="wallet-table-body"></tbody></table>
+</div>
 </div>
 </div>
 
-<!-- ==================== SETTINGS ==================== -->
+<!-- SETTINGS -->
 <div id="tab-settings" class="tab">
 <div class="grid-3">
 <div class="card">
-<div class="card-header"><span class="title">🌐 Connections</span></div>
-<div class="card-body" id="settings-chains"></div>
+<div class="card-header"><span class="title">🌐 Networks</span></div>
+<div class="card-body" id="settings-chains" style="font-size:13px"></div>
 </div>
 <div class="card">
-<div class="card-header"><span class="title">📊 System Stats</span></div>
-<div class="card-body" id="settings-stats"></div>
+<div class="card-header"><span class="title">📊 Statistics</span></div>
+<div class="card-body" id="settings-stats" style="font-size:13px"></div>
 </div>
 <div class="card">
 <div class="card-header"><span class="title">ℹ️ About</span></div>
-<div class="card-body" style="font-size:13px;line-height:1.8">
+<div class="card-body" style="font-size:13px;line-height:1.9">
 <strong>Crypto Smart Money Tracker Pro</strong><br>
-<span style="color:var(--dim)">Version 2.0 — Web Edition</span><br><br>
-Track whale transactions, scan tokens for rug pulls,<br>
-and follow smart money wallets across<br>
+<span style="color:var(--dim)">v2.0 — Web Edition</span><br><br>
+Track whales, scan tokens for rug pulls,<br>
+follow smart money across<br>
 Ethereum · BSC · Base<br><br>
-<span style="font-size:11px;color:var(--dim)">Built with Flask · Chart.js · Web3.py</span>
+<span style="font-size:11px;color:var(--dim)">Flask · Chart.js · Web3.py</span>
 </div>
 </div>
 </div>
@@ -296,316 +346,251 @@ Ethereum · BSC · Base<br><br>
 </div>
 
 <script>
-let monitoring = false;
-let monitorInterval;
-let whaleChart, priceChart;
+let monitoring = false, monitorInterval, whaleChart, priceChart, tickerCache = [];
 
+// Tab switching
 document.querySelectorAll("#nav button").forEach(b=>{
-    b.onclick=()=>{
-        document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
-        b.classList.add("active");
-        document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-        document.getElementById("tab-"+b.dataset.tab).classList.add("active");
-        const tabMap = {whales:"loadAllWhales", wallets:"loadWallets", dashboard:"loadStatus"};
-        if(tabMap[b.dataset.tab]) window[tabMap[b.dataset.tab]]();
-        if(b.dataset.tab==="analyze") loadRecentTokens();
+b.onclick=()=>{
+document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+b.classList.add("active");
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+const m={whales:"loadAllWhales",wallets:"loadWallets",dashboard:"loadStatus"};
+if(m[b.dataset.tab]) window[m[b.dataset.tab]]();
+if(b.dataset.tab==="analyze") loadRecentTokens();
 }});
 
-function toast(msg, color="var(--green)") {
-    const t=document.createElement("div");t.className="toast";t.textContent=msg;t.style.borderColor=color;
-    document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+function toast(msg,color="var(--green)"){const t=document.createElement("div");t.className="toast";t.innerHTML=msg;t.style.borderColor=color;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+async function api(url,o){const r=await fetch(url,o);return r.json()}
+
+// TICKER
+async function updateTicker(){
+try{
+const d=await api("/api/status");
+const w=await api("/api/whales?limit=6");
+const ticker = document.getElementById("ticker-content");
+const items = [];
+if(d.prices){
+items.push(`ETH <b class="${d.chart.price_eth?.length>1?'val':''}">$${d.prices.ethereum?.toLocaleString()}</b>`);
+items.push(`BNB <b>$${d.prices.binancecoin?.toLocaleString()}</b>`);
+}
+items.push(`Whales: ${d.whales} · Vol: $${(d.volume||0).toLocaleString()}`);
+if(w.length) items.push(`Last: ${w[0].value?.toFixed(2)} ${w[0].symbol} ($${(w[0].usd_value||0).toLocaleString()})`);
+const html = items.concat(items).map(i=>`<span class="ticker-item">${i}</span>`).join("");
+ticker.innerHTML = html;
+tickerCache = items;
+}catch(e){}
 }
 
-async function api(url,opts={}){const r=await fetch(url,opts);return r.json()}
-
-// ======== STATUS ========
-async function loadStatus() {
-    try {
-        const d = await api("/api/status");
-        const phtml = Object.entries(d.prices||{}).map(([k,v])=>{
-            const sym = k==="ethereum"?"ETH":"BNB";
-            const prev = window[`_prev_${k}`];
-            const cls = prev !== undefined ? (v > prev ? "price-up" : v < prev ? "price-down" : "") : "";
-            window[`_prev_${k}`] = v;
-            return `<div class="price-item"><span class="dot" style="background:${cls.includes('up')?'var(--green)':cls.includes('down')?'var(--red)':'var(--dim)'}"></span>${sym} <span class="val ${cls}">$${v.toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>`;
-        }).join("");
-        document.getElementById("prices").innerHTML = phtml;
-
-        const ch = d.chains||{};
-        document.getElementById("chain-status").innerHTML = Object.entries(ch).map(([c,ok])=>
-            `<span class="chain-dot"><span class="dot ${ok?'on':'off'}"></span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>`
-        ).join("");
-
-        document.getElementById("main-stats").innerHTML = `
-            <div class="stat-card"><div class="icon">🐋</div><div class="label">Whales Detected</div><div class="value" style="color:var(--cyan)">${d.whales}</div><div class="sub">All time</div></div>
-            <div class="stat-card"><div class="icon">💰</div><div class="label">Total Volume</div><div class="value" style="color:var(--green)">$${(d.volume||0).toLocaleString()}</div><div class="sub">Across all chains</div></div>
-            <div class="stat-card"><div class="icon">👛</div><div class="label">Smart Wallets</div><div class="value" style="color:var(--yellow)">${d.wallets}</div><div class="sub">Tracked</div></div>
-            <div class="stat-card"><div class="icon">📊</div><div class="label">Chains</div><div class="value" style="font-size:20px">${Object.values(ch).filter(Boolean).length}/3</div><div class="sub">${Object.entries(ch).map(([c,ok])=>`${c.slice(0,3).toUpperCase()}`).join(" · ")}</div></div>
-        `;
-
-        if(d.chart && whaleChart) {
-            const vols = d.chart.volume || [];
-            const cnts = d.chart.counts || [];
-            const labels = vols.map((_,i)=>`-${(vols.length-i)*0.5}m`);
-            whaleChart.data.labels = labels;
-            whaleChart.data.datasets[0].data = vols;
-            whaleChart.data.datasets[1].data = cnts;
-            whaleChart.update('none');
-        }
-        if(d.chart && priceChart) {
-            const pe = d.chart.price_eth || [];
-            const pb = d.chart.price_bnb || [];
-            const maxLen = Math.max(pe.length, pb.length);
-            const plabels = Array.from({length:maxLen},(_,i)=>i);
-            priceChart.data.labels = plabels;
-            priceChart.data.datasets[0].data = pe;
-            priceChart.data.datasets[1].data = pb;
-            priceChart.update('none');
-        }
-    } catch(e){}
+// STATUS
+async function loadStatus(){
+try{
+const d=await api("/api/status");
+const phtml=Object.entries(d.prices||{}).map(([k,v])=>{
+const sym=k==="ethereum"?"ETH":"BNB",prev=window[`_p_${k}`],cls=prev!==undefined?(v>prev?"price-up":v<prev?"price-down":""):"";
+window[`_p_${k}`]=v;
+return `<div class="price-item"><span class="dot" style="background:${cls.includes('up')?'var(--green)':cls.includes('down')?'var(--red)':'var(--dim)'}"></span><span class="sym">${sym}</span><span class="val ${cls}">$${v.toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>`;
+}).join("");
+document.getElementById("prices").innerHTML=phtml;
+const ch=d.chains||{};
+document.getElementById("chain-status").innerHTML=Object.entries(ch).map(([c,ok])=>`<span class="chain-dot"><span class="dot ${ok?'on':'off'}"></span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>`).join("");
+document.getElementById("main-stats").innerHTML=`
+<div class="stat-card cyan"><div class="icon">🐋</div><div class="label">Whales</div><div class="value" style="color:var(--cyan)">${d.whales}</div><div class="sub">Total detected</div></div>
+<div class="stat-card green"><div class="icon">💰</div><div class="label">Volume</div><div class="value" style="color:var(--green)">$${(d.volume||0).toLocaleString()}</div><div class="sub">All chains</div></div>
+<div class="stat-card yellow"><div class="icon">👛</div><div class="label">Wallets</div><div class="value" style="color:var(--yellow)">${d.wallets}</div><div class="sub">Tracked</div></div>
+<div class="stat-card purple"><div class="icon">📡</div><div class="label">Networks</div><div class="value" style="font-size:20px">${Object.values(ch).filter(Boolean).length}/3</div><div class="sub">${Object.entries(ch).map(([c])=>c.slice(0,3).toUpperCase()).join(' · ')}</div></div>`;
+if(d.chart&&whaleChart){
+const v=d.chart.volume||[],c=d.chart.counts||[],l=v.map((_,i)=>`-${(v.length-i)*0.5}m`);
+whaleChart.data.labels=l;whaleChart.data.datasets[0].data=v;whaleChart.data.datasets[1].data=c;
+whaleChart.update('none');
+}
+if(d.chart&&priceChart){
+const pe=d.chart.price_eth||[],pb=d.chart.price_bnb||[],ml=Math.max(pe.length,pb.length);
+priceChart.data.labels=Array.from({length:ml},(_,i)=>i);
+priceChart.data.datasets[0].data=pe;priceChart.data.datasets[1].data=pb;
+priceChart.update('none');
+}
+}catch(e){}
 }
 
-// ======== WHALES ========
-async function loadDashboardWhales() {
-    try {
-        const w = await api("/api/whales?limit=6");
-        document.getElementById("dash-whales").innerHTML = w.length ? w.map(x=>`<tr>
-            <td style="font-size:11px">${(x.timestamp||"").slice(5,16)||"?"}</td>
-            <td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
-            <td>${(x.value||0).toFixed(2)} ${x.symbol||""}</td>
-            <td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
-            <td><span class="addr" onclick="copyText('${x.from_addr||""}')" title="Click to copy">${(x.from_addr||"").slice(0,10)}..</span></td>
-            <td><span class="addr" onclick="copyText('${x.to_addr||""}')" title="Click to copy">${(x.to_addr||"").slice(0,10)}..</span></td>
-        </tr>`).join("") : '<tr><td colspan="6"><div class="empty-state"><p>No whale moves yet — start monitoring!</p></div></td></tr>';
-    } catch(e){}
+// WHALES
+async function loadDashboardWhales(){
+try{
+const w=await api("/api/whales?limit=6");
+document.getElementById("dash-whales").innerHTML=w.length?w.map(x=>`<tr>
+<td style="font-size:10px;color:var(--dim)">${(x.timestamp||"").slice(5,16)||"?"}</td>
+<td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
+<td>${(x.value||0).toFixed(2)} ${x.symbol||""}</td>
+<td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
+<td><span class="addr" onclick="copyText('${x.from_addr||""}')" title="Click to copy">${(x.from_addr||"").slice(0,10)}..</span></td>
+<td><span class="addr" onclick="copyText('${x.to_addr||""}')" title="Click to copy">${(x.to_addr||"").slice(0,10)}..</span></td>
+</tr>`).join(""):'<tr><td colspan="6"><div class="empty-state"><p>No data yet</p></div></td></tr>';
+}catch(e){}}
+
+async function loadAllWhales(){
+try{
+const w=await api("/api/whales?limit=100");
+document.getElementById("all-whales").innerHTML=w.length?w.map(x=>`<tr>
+<td style="font-size:10px;color:var(--dim)">${(x.timestamp||"").slice(5,19)||"?"}</td>
+<td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
+<td>${(x.value||0).toFixed(4)} ${x.symbol||""}</td>
+<td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
+<td><span class="addr" onclick="copyText('${x.from_addr||""}')">${(x.from_addr||"").slice(0,12)}..</span></td>
+<td><span class="addr" onclick="copyText('${x.to_addr||""}')">${(x.to_addr||"").slice(0,12)}..</span></td>
+<td><span class="tx-hash" onclick="copyText('${x.hash||""}')"><span class="hash-val">${(x.hash||"").slice(0,14)}</span></span></td>
+</tr>`).join(""):'<tr><td colspan="7"><div class="empty-state"><p>No data</p></div></td></tr>';
+}catch(e){}}
+
+async function clearWhales(){await api("/api/whales/clear",{method:"POST"});loadAllWhales();loadDashboardWhales();loadStatus();toast("Cleared")}
+
+function startMonitor(){
+monitoring=!monitoring;
+if(monitoring){
+document.getElementById("monBtn").innerHTML="⏹ Stop";document.getElementById("monBtn").className="btn btn-danger btn-sm";
+document.getElementById("monitor-status").innerHTML='<span class="monitor-dot" style="background:var(--green)"></span> Live';
+monitorInterval=setInterval(()=>{loadAllWhales();loadStatus()},5000);toast("Monitoring started");
+}else{
+document.getElementById("monBtn").innerHTML="▶ Monitor";document.getElementById("monBtn").className="btn btn-success btn-sm";
+document.getElementById("monitor-status").textContent="○ Idle";clearInterval(monitorInterval);toast("Stopped","var(--yellow)");
+}}
+
+// TOKEN SCAN
+async function analyzeToken(){
+const addr=document.getElementById("token-addr").value.trim(),chain=document.getElementById("token-chain").value;
+if(!addr.startsWith("0x")||addr.length<42) return toast("Invalid address","var(--red)");
+const btn=document.getElementById("analyze-btn");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Scanning...';
+document.getElementById("token-result").innerHTML="";
+try{
+const r=await api("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr,chain})});
+if(r.error){toast(r.error,"var(--red)");btn.disabled=false;btn.innerHTML="🔍 Scan";return}
+const cl={low:"var(--green)",medium:"var(--yellow)",high:"var(--red)"},c=cl[r.risk]||"var(--dim)";
+const sb=Array.from({length:20},(_,i)=>{const s=r.score||50;return `<div class="seg ${i<s/5?'on':'off'}"></div>`}).join("");
+let html=`<div class="result-box" style="border-left:3px solid ${c}">`;
+html+=`<span class="hl">TOKEN</span>  ${r.name||"?"} (<span class="hlg">${r.symbol||"?"}</span>)\n`;
+html+=`<span class="hl">ADDR</span>   ${addr.slice(0,24)}...\n`;
+html+=`<span class="hl">CHAIN</span>  ${chain.charAt(0).toUpperCase()+chain.slice(1)}\n`;
+html+=`${"=".repeat(50)}\n\n`;
+html+=`<span class="hl">RISK</span>      <span style="color:${c};font-weight:700">${r.risk.toUpperCase()}</span>\n`;
+html+=`<span class="hl">SCORE</span>     ${r.score}/100\n<div class="score-bar">${sb}</div>\n`;
+if(r.ownership_renounced!==undefined) html+=`<span class="hl">OWNER</span>     ${r.ownership_renounced?'Renounced ✅':'NOT Renounced ❌'}\n`;
+if(r.liquidity_usd) html+=`<span class="hl">LIQ</span>       $${Number(r.liquidity_usd).toLocaleString()}\n`;
+if(r.top_holder_pct) html+=`<span class="hl">HOLDER</span>    Top: ${(r.top_holder_pct*100).toFixed(1)}%\n`;
+if(r.total_supply) html+=`<span class="hl">SUPPLY</span>    ${Number(r.total_supply).toLocaleString()}\n`;
+if(r.honeypot) html+=`\n🚨 <span class="hlr">HONEYPOT</span>\n`;
+if(r.issues&&r.issues.length){html+=`\n⚠ ISSUES:\n`;r.issues.forEach(i=>html+=`  • <span class="hlr">${i}</span>\n`)}
+if(r.risk==="low"&&(!r.issues||!r.issues.length)) html+=`\n✅ <span class="hlg">Token appears safe</span>\n`;
+html+=`${"=".repeat(50)}</div>`;
+document.getElementById("token-result").innerHTML=html;loadRecentTokens();toast("Done");
+}catch(e){toast("Error","var(--red)")}
+btn.disabled=false;btn.innerHTML="🔍 Scan";
 }
 
-async function loadAllWhales() {
-    try {
-        const w = await api("/api/whales?limit=100");
-        document.getElementById("all-whales").innerHTML = w.length ? w.map(x=>`<tr>
-            <td style="font-size:11px">${(x.timestamp||"").slice(5,19)||"?"}</td>
-            <td><span class="badge ${(x.chain||"").toLowerCase()}">${x.chain||"?"}</span></td>
-            <td>${(x.value||0).toFixed(4)} ${x.symbol||""}</td>
-            <td style="color:var(--green);font-weight:600">$${(x.usd_value||0).toLocaleString()}</td>
-            <td><span class="addr" onclick="copyText('${x.from_addr||""}')" title="Click to copy">${(x.from_addr||"").slice(0,12)}..</span></td>
-            <td><span class="addr" onclick="copyText('${x.to_addr||""}')" title="Click to copy">${(x.to_addr||"").slice(0,12)}..</span></td>
-            <td><span class="tx-hash" onclick="copyText('${x.hash||""}')" title="Click to copy hash">${(x.hash||"").slice(0,12)}..</span></td>
-        </tr>`).join("") : '<tr><td colspan="7"><div class="empty-state"><p>No transactions yet</p></div></td></tr>';
-    } catch(e){}
+async function loadRecentTokens(){
+try{
+const t=await api("/api/tokens/recent");
+const el=document.getElementById("recent-tokens");
+if(!t.length){el.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No tokens scanned yet</p></div>';return}
+el.innerHTML=t.map(x=>`<div class="token-item" onclick="document.getElementById('token-addr').value='${x.address}';document.querySelector('[data-tab=analyze]').click()">
+<span>${x.symbol||"?"} <span style="color:var(--dim);font-size:10px">${(x.address||"").slice(0,14)}..</span></span>
+<span class="badge ${x.risk||'medium'}">${(x.risk||"?").toUpperCase()} ${x.score||0}</span>
+</div>`).join("");
+}catch(e){}}
+
+// WALLETS
+async function loadWallets(){
+try{
+const w=await api("/api/wallets");
+const tbody=document.getElementById("wallet-table-body");
+tbody.innerHTML=w.length?w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).map(x=>`<tr>
+<td><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}..${(x.wallet||"").slice(-4)}</span></td>
+<td>${x.chain||"?"}</td><td>${x.total_trades||0}</td>
+<td style="color:var(--green);font-weight:600">$${(x.estimated_profit_usd||0).toLocaleString()}</td>
+<td>${((x.win_rate||0)*100).toFixed(0)}%</td>
+<td style="font-size:10px;color:var(--dim)">${(x.tokens_traded||[]).slice(0,4).join(", ")}</td>
+</tr>`).join(""):'<tr><td colspan="6"><div class="empty-state"><div class="icon">👛</div><p>No wallets tracked</p></div></td></tr>';
+const dw=document.getElementById("dash-wallets");
+if(w.length){dw.innerHTML=w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).slice(0,5).map(x=>`
+<div class="token-item"><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}..<span style="color:var(--dim)"> ${x.chain||""}</span></span>
+<span style="color:var(--green);font-family:var(--mono)">$${(x.estimated_profit_usd||0).toLocaleString()}</span></div>`).join("")
+}else{dw.innerHTML='<div class="empty-state"><div class="icon">👛</div><p>No wallets tracked yet</p></div>'}
+}catch(e){}}
+
+async function trackWallet(){
+const addr=document.getElementById("wallet-addr").value.trim();
+if(!addr.startsWith("0x")) return toast("Invalid address","var(--red)");
+const btn=document.getElementById("track-btn");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Tracking...';
+const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr})});
+if(r.status==="ok"){toast(r.message);setTimeout(loadWallets,3000)}else toast(r.error||"Error","var(--red)");
+btn.disabled=false;btn.innerHTML="👁 Track";
 }
 
-async function clearWhales() {
-    await api("/api/whales/clear",{method:"POST"});
-    loadAllWhales(); loadDashboardWhales(); loadStatus();
-    toast("Whale data cleared");
+// SETTINGS
+async function loadSettings(){
+try{
+const d=await api("/api/status"),ch=d.chains||{};
+document.getElementById("settings-chains").innerHTML=Object.entries(ch).map(([c,ok])=>`
+<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+<span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>
+<span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'● Connected':'○ Disconnected'}</span>
+</div>`).join("");
+document.getElementById("settings-stats").innerHTML=`
+<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>🐋 Whales</span><span style="font-family:var(--mono)">${d.whales}</span></div>
+<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span>💰 Volume</span><span style="font-family:var(--mono);color:var(--green)">$${(d.volume||0).toLocaleString()}</span></div>
+<div style="padding:10px 0;display:flex;justify-content:space-between"><span>👛 Wallets</span><span style="font-family:var(--mono)">${d.wallets}</span></div>`;
+}catch(e){}}
+
+// SORT
+function sortTable(id,col){
+const tbody=document.getElementById(id),rows=Array.from(tbody.querySelectorAll("tr"));
+rows.sort((a,b)=>{const va=a.cells[col]?.textContent.trim()||"",vb=b.cells[col]?.textContent.trim()||"";
+const na=parseFloat(va.replace(/[$,]/g,"")),nb=parseFloat(vb.replace(/[$,]/g,""));
+if(!isNaN(na)&&!isNaN(nb)) return nb-na;return vb.localeCompare(va)});
+rows.forEach(r=>tbody.appendChild(r));
+const headers=tbody.closest("table").querySelectorAll("th");headers.forEach(h=>h.classList.remove("sorted"));
+headers[col]?.classList.add("sorted");
 }
 
-function startMonitor() {
-    monitoring = !monitoring;
-    if(monitoring) {
-        document.getElementById("monBtn").textContent = "⏹ Stop";
-        document.getElementById("monBtn").className = "btn btn-danger btn-sm";
-        document.getElementById("monitor-status").innerHTML = '<span class="monitor-dot" style="background:var(--green)"></span> Live';
-        monitorInterval = setInterval(()=>{loadAllWhales();loadStatus()}, 5000);
-        toast("Live monitoring started");
-    } else {
-        document.getElementById("monBtn").textContent = "▶ Monitor";
-        document.getElementById("monBtn").className = "btn btn-success btn-sm";
-        document.getElementById("monitor-status").textContent = "● Idle";
-        clearInterval(monitorInterval);
-        toast("Monitoring stopped","var(--yellow)");
-    }
-}
+// CHARTS
+function initCharts(){
+const ctx1=document.getElementById("whaleChart")?.getContext("2d");
+if(ctx1){whaleChart=new Chart(ctx1,{
+type:"bar",data:{labels:[],datasets:[
+{label:"Volume $",data:[],backgroundColor:ctx1.createLinearGradient?(()=>{const g=ctx1.createLinearGradient(0,0,0,200);g.addColorStop(0,"rgba(56,189,248,.6)");g.addColorStop(1,"rgba(56,189,248,.1)");return g})():"rgba(56,189,248,.5)",borderRadius:4,yAxisID:"y"},
+{label:"Count",data:[],backgroundColor:"rgba(34,197,94,.4)",borderRadius:4,yAxisID:"y1"}
+]},options:{
+responsive:true,maintainAspectRatio:false,
+plugins:{legend:{labels:{color:"#6e7e94",font:{size:9},boxWidth:12,padding:8}}},
+scales:{
+x:{grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8}}},
+y:{beginAtZero:true,grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8},callback:v=>"$"+v.toLocaleString()}},
+y1:{beginAtZero:true,position:"right",grid:{display:false},ticks:{color:"#6e7e94",font:{size:8}}}
+}}})}
+const ctx2=document.getElementById("priceChart")?.getContext("2d");
+if(ctx2){priceChart=new Chart(ctx2,{
+type:"line",data:{labels:[],datasets:[
+{label:"ETH",data:[],borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,.08)",fill:true,tension:.4,pointRadius:0,borderWidth:2},
+{label:"BNB",data:[],borderColor:"#eab308",backgroundColor:"rgba(234,179,8,.08)",fill:true,tension:.4,pointRadius:0,borderWidth:2}
+]},options:{
+responsive:true,maintainAspectRatio:false,
+plugins:{legend:{labels:{color:"#6e7e94",font:{size:9},boxWidth:12,padding:8}}},
+scales:{
+x:{grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8},display:false}},
+y:{grid:{color:"rgba(30,42,56,.4)"},ticks:{color:"#6e7e94",font:{size:8},callback:v=>"$"+v.toLocaleString()}}
+}}})}}
 
-// ======== TOKEN ANALYSIS ========
-async function analyzeToken() {
-    const addr = document.getElementById("token-addr").value.trim();
-    const chain = document.getElementById("token-chain").value;
-    if(!addr.startsWith("0x")||addr.length<42) return toast("Invalid token address","var(--red)");
-    const btn = document.getElementById("analyze-btn");
-    btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Scanning...';
-    document.getElementById("token-result").innerHTML = "";
-    try {
-        const r = await api("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr,chain})});
-        if(r.error){toast(r.error,"var(--red)");btn.disabled=false;btn.innerHTML="🔍 Scan";return}
-        const colors = {low:"var(--green)",medium:"var(--yellow)",high:"var(--red)"};
-        const c = colors[r.risk]||"var(--dim)";
-        const sb = Array.from({length:20},(_,i)=>{
-            const s = (r.score||50);
-            if(i < s/5) return `<div class="seg on"></div>`;
-            return `<div class="seg off"></div>`;
-        }).join("");
-        let html = `<div class="result-box" style="border-left:3px solid ${c}">`;
-        html += `<span class="hl">TOKEN</span>  ${r.name||"?"} (<span class="hlg">${r.symbol||"?"}</span>)\n`;
-        html += `<span class="hl">ADDR</span>   ${addr.slice(0,24)}...\n`;
-        html += `<span class="hl">CHAIN</span>  ${chain.charAt(0).toUpperCase()+chain.slice(1)}\n`;
-        html += `─".repeat(50)}\n\n`;
-        html += `<span class="hl">RISK</span>      <span style="color:${c};font-weight:700">${r.risk.toUpperCase()}</span>\n`;
-        html += `<span class="hl">SCORE</span>     ${r.score}/100\n<div class="score-bar">${sb}</div>\n`;
-        html += `<span class="hl">OWNER</span>     ${r.ownership_renounced ? 'Renounced ✅' : 'NOT Renounced ❌'}\n`;
-        if(r.liquidity_usd) html += `<span class="hl">LIQ</span>       $${Number(r.liquidity_usd).toLocaleString()}\n`;
-        if(r.top_holder_pct) html += `<span class="hl">HOLDER</span>    Top: ${(r.top_holder_pct*100).toFixed(1)}%\n`;
-        if(r.total_supply) html += `<span class="hl">SUPPLY</span>    ${Number(r.total_supply).toLocaleString()}\n`;
-        if(r.honeypot) html += `\n🚨 <span class="hlr">HONEYPOT DETECTED</span> 🚨\n`;
-        if(r.issues&&r.issues.length) { html+=`\n⚠ ISSUES:\n`; r.issues.forEach(i=>html+=`  • <span class="hlr">${i}</span>\n`); }
-        if(r.risk==="low"&&(!r.issues||!r.issues.length)) html+=`\n✅ <span class="hlg">Token appears safe</span>\n`;
-        html += `\n${"=".repeat(50)}</div>`;
-        document.getElementById("token-result").innerHTML = html;
-        loadRecentTokens(); toast("Analysis complete");
-    } catch(e){toast("Error","var(--red)")}
-    btn.disabled=false; btn.innerHTML="🔍 Scan";
-}
+// COPY
+function copyText(text){
+if(!text) return;navigator.clipboard.writeText(text).then(()=>{
+if(event&&event.target){event.target.classList.add("copied");setTimeout(()=>event.target.classList.remove("copied"),1500)}
+toast("Copied: "+text.slice(0,14)+"...");
+}).catch(()=>{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);toast("Copied!")})}
 
-async function loadRecentTokens() {
-    try {
-        const t = await api("/api/tokens/recent");
-        const el=document.getElementById("recent-tokens");
-        if(!t.length){el.innerHTML='<div class="empty-state"><p>No tokens scanned yet</p></div>';return}
-        el.innerHTML=t.map(x=>`<div class="token-item" onclick="document.getElementById('token-addr').value='${x.address}';document.querySelector('[data-tab=analyze]').click()">
-            <span>${x.symbol||"?"} <span style="color:var(--dim)">${(x.address||"").slice(0,14)}..</span></span>
-            <span class="badge ${x.risk||'medium'}">${(x.risk||"?").toUpperCase()} ${x.score||0}</span>
-        </div>`).join("");
-    } catch(e){}
-}
-
-// ======== WALLETS ========
-async function loadWallets() {
-    try {
-        const w = await api("/api/wallets");
-        const tbody = document.getElementById("wallet-table-body");
-        tbody.innerHTML = w.length ? w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).map(x=>`<tr>
-            <td><span class="addr" onclick="copyText('${x.wallet||""}')" title="Click to copy">${(x.wallet||"").slice(0,12)}..${(x.wallet||"").slice(-4)}</span></td>
-            <td>${x.chain||"?"}</td>
-            <td>${x.total_trades||0}</td>
-            <td style="color:var(--green);font-weight:600">$${(x.estimated_profit_usd||0).toLocaleString()}</td>
-            <td>${((x.win_rate||0)*100).toFixed(0)}%</td>
-            <td style="font-size:11px;color:var(--dim)">${(x.tokens_traded||[]).slice(0,4).join(", ")}</td>
-        </tr>`).join("") : '<tr><td colspan="6"><div class="empty-state"><p>No wallets tracked — add one above!</p></div></td></tr>';
-
-        // Update dashboard
-        const dw = document.getElementById("dash-wallets");
-        if(w.length) {
-            dw.innerHTML = w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated_profit_usd||0)).slice(0,5).map(x=>`
-                <div class="token-item"><span class="addr" onclick="copyText('${x.wallet||""}')">${(x.wallet||"").slice(0,12)}..<span style="color:var(--dim)"> ${x.chain||""}</span></span>
-                <span style="color:var(--green);font-family:JetBrains Mono">$${(x.estimated_profit_usd||0).toLocaleString()}</span></div>
-            `).join("");
-        } else { dw.innerHTML = '<div class="empty-state"><p>No wallets tracked yet</p></div>'; }
-    } catch(e){}
-}
-
-async function trackWallet() {
-    const addr=document.getElementById("wallet-addr").value.trim();
-    if(!addr.startsWith("0x")) return toast("Invalid address","var(--red)");
-    const btn=document.getElementById("track-btn");
-    btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Tracking...';
-    const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:addr})});
-    if(r.status==="ok"){toast(r.message);setTimeout(loadWallets,3000)}
-    else toast(r.error||"Error","var(--red)");
-    btn.disabled=false;btn.innerHTML="👁 Track Wallet";
-}
-
-// ======== SETTINGS ========
-async function loadSettings() {
-    try {
-        const d = await api("/api/status");
-        const ch = d.chains||{};
-        document.getElementById("settings-chains").innerHTML = Object.entries(ch).map(([c,ok])=>`
-            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
-                <span>${c.charAt(0).toUpperCase()+c.slice(1)}</span>
-                <span style="color:${ok?'var(--green)':'var(--red)'}">${ok ? '● Connected' : '○ Disconnected'}</span>
-            </div>
-        `).join("");
-        document.getElementById("settings-stats").innerHTML = `
-            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
-                <span>🐋 Whales</span><span style="font-family:JetBrains Mono">${d.whales}</span></div>
-            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
-                <span>💰 Volume</span><span style="font-family:JetBrains Mono;color:var(--green)">$${(d.volume||0).toLocaleString()}</span></div>
-            <div style="padding:8px 0;display:flex;justify-content:space-between">
-                <span>👛 Wallets</span><span style="font-family:JetBrains Mono">${d.wallets}</span></div>
-        `;
-    } catch(e){}
-}
-
-function sortTable(id, col) {
-    const tbody=document.getElementById(id);
-    const rows=Array.from(tbody.querySelectorAll("tr"));
-    const idx=col;
-    rows.sort((a,b)=>{
-        const va=a.cells[idx]?.textContent.trim()||"", vb=b.cells[idx]?.textContent.trim()||"";
-        const na=parseFloat(va.replace(/[$,]/g,"")), nb=parseFloat(vb.replace(/[$,]/g,""));
-        if(!isNaN(na)&&!isNaN(nb)) return nb-na;
-        return vb.localeCompare(va);
-    });
-    rows.forEach(r=>tbody.appendChild(r));
-}
-
-// ======== CHARTS ========
-function initCharts() {
-    const ctx1 = document.getElementById("whaleChart")?.getContext("2d");
-    if(ctx1) {
-        whaleChart = new Chart(ctx1, {
-            type: "bar",
-            data: {labels:[], datasets:[
-                {label:"Volume (USD)", data:[], backgroundColor:"rgba(56,189,248,.5)", borderRadius:4, yAxisID:"y"},
-                {label:"Count", data:[], backgroundColor:"rgba(34,197,94,.4)", borderRadius:4, yAxisID:"y1"}
-            ]},
-            options: {
-                responsive:true, maintainAspectRatio:false,
-                plugins:{legend:{labels:{color:"#6e7e94",font:{size:10}}}},
-                scales:{
-                    x:{grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:9}}},
-                    y:{beginAtZero:true,grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:9},callback:v=>"$"+v.toLocaleString()}},
-                    y1:{beginAtZero:true,position:"right",grid:{display:false},ticks:{color:"#6e7e94",font:{size:9}}}
-                }
-            }
-        });
-    }
-
-    const ctx2 = document.getElementById("priceChart")?.getContext("2d");
-    if(ctx2) {
-        priceChart = new Chart(ctx2, {
-            type: "line",
-            data: {labels:[], datasets:[
-                {label:"ETH", data:[], borderColor:"#38bdf8", backgroundColor:"rgba(56,189,248,.1)", fill:true, tension:.3, pointRadius:0, borderWidth:2},
-                {label:"BNB", data:[], borderColor:"#eab308", backgroundColor:"rgba(234,179,8,.1)", fill:true, tension:.3, pointRadius:0, borderWidth:2}
-            ]},
-            options: {
-                responsive:true, maintainAspectRatio:false,
-                plugins:{legend:{labels:{color:"#6e7e94",font:{size:10}}}},
-                scales:{
-                    x:{grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:8},display:false}},
-                    y:{grid:{color:"rgba(30,42,56,.5)"},ticks:{color:"#6e7e94",font:{size:9},callback:v=>"$"+v.toLocaleString()}}
-                }
-            }
-        });
-    }
-}
-
-// ======== INIT ========
-initCharts();
-loadStatus(); loadDashboardWhales(); loadWallets(); loadSettings();
-
-// ======== COPY TO CLIPBOARD ========
-function copyText(text) {
-    if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-        const el = event.target;
-        el.classList.add("copied");
-        toast("Copied: " + text.slice(0, 16) + "...");
-        setTimeout(() => el.classList.remove("copied"), 1500);
-    }).catch(() => {
-        const ta = document.createElement("textarea");
-        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.select();
-        document.execCommand("copy"); document.body.removeChild(ta);
-        toast("Copied!");
-    });
-}
-
-// Auto-refresh
-setInterval(()=>{if(!monitoring)loadStatus()}, 15000);
-setInterval(()=>{if(!monitoring)loadDashboardWhales()}, 20000);
+// INIT
+initCharts();loadStatus();loadDashboardWhales();loadWallets();loadSettings();updateTicker();
+setInterval(()=>{if(!monitoring)loadStatus()},15000);
+setInterval(()=>{if(!monitoring)loadDashboardWhales()},20000);
+setInterval(updateTicker,10000);
 </script>
 </body>
 </html>
