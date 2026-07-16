@@ -37,6 +37,20 @@ whale_volume_history = deque(maxlen=120)
 whale_count_history = deque(maxlen=120)
 
 def _record_snapshot():
+    # Pre-populate deques from DB so charts aren't empty on cold start
+    try:
+        from database.db import Database
+        _db = Database()
+        all_whales = _db.get_whale_txns(200)
+        # Reverse so chronological order
+        all_whales.reverse()
+        for i in range(0, len(all_whales), 10):
+            batch = all_whales[i:i+10]
+            vol = sum(w.get("usd_value", 0) or 0 for w in batch)
+            whale_volume_history.append(vol)
+            whale_count_history.append(len(batch))
+    except:
+        pass
     while True:
         time.sleep(30)
         try:
