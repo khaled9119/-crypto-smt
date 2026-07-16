@@ -43,6 +43,11 @@ try:
         if p:
             for _ in range(5):
                 price_history[coin].append(p)
+        else:
+            # Use default seed so chart isn't empty
+            seed = 1800 if coin == "ethereum" else 570
+            for _ in range(5):
+                price_history[coin].append(seed)
 except:
     pass
 try:
@@ -85,7 +90,14 @@ def api_status():
     prices = {}
     for coin in ["ethereum", "binancecoin"]:
         p = get_usd_price(coin)
-        if p: prices[coin] = p
+        if p:
+            prices[coin] = p
+            # Replace seed price with real data
+            hist = price_history[coin]
+            if len(hist) > 0 and abs(hist[-1] - p) / p > 0.05:
+                hist.clear()
+                for _ in range(5):
+                    hist.append(p)
     stats = whale_watcher.get_stats()
     wallets = smart_wallet.get_smart_wallets(0.0)
     vol_list = list(whale_volume_history)
