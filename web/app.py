@@ -177,7 +177,7 @@ def api_track_wallet():
 
 def _fetch_wallet_data(addr):
     from tracker.blockchain import get_token_txns, get_explorer_txns, get_usd_price as gup
-    for chain_id in ["ethereum", "bsc"]:
+    for chain_id in ["ethereum", "bsc", "base"]:
         cfg = CHAINS[chain_id]
         txns = get_token_txns(addr, chain_id, cfg["api_key"], offset=100)
         if txns:
@@ -210,6 +210,20 @@ def api_clear_whales():
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
+
+@app.route("/api/wallet/remove", methods=["POST"])
+def api_remove_wallet():
+    data = request.get_json()
+    addr = data.get("address", "").strip().lower()
+    if smart_wallet.remove_wallet(addr):
+        return jsonify({"status": "ok", "message": "Wallet removed"})
+    return jsonify({"status": "ok", "message": "Wallet not found"})
+
+@app.route("/api/wallets/auto-discover", methods=["POST"])
+def api_auto_discover_wallets():
+    chain = request.get_json().get("chain", "ethereum") if request.get_json() else "ethereum"
+    threading.Thread(target=lambda: smart_wallet.find_potential_smart_wallets(chain), daemon=True).start()
+    return jsonify({"status": "ok", "message": "Scanning for smart wallets..."})
 
 @app.route("/api/tokens/recent")
 def api_recent_tokens():

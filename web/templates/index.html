@@ -349,6 +349,7 @@ input::placeholder{color:var(--dim)}
 <span class="card-title">👛 Smart Wallet Tracker</span>
 <div style="display:flex;gap:5px;flex-wrap:wrap">
 <button class="btn btn-ghost btn-sm" onclick="loadWallets()">⟳</button>
+<button class="btn btn-ghost btn-sm" onclick="autoDiscover()" title="Scan popular tokens for active wallets">🔄 Find Smart Wallets</button>
 <button class="btn btn-ghost btn-sm" onclick="window.open('/api/export/wallets')">📥 CSV</button>
 </div>
 </div>
@@ -678,6 +679,7 @@ const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"ap
 if(r.status==="ok"){toast(r.message);setTimeout(loadWallets,3000)}else toast(r.error||"Error","var(--red)");
 b.disabled=false;b.innerHTML="👁 Track";
 }
+async function autoDiscover(){toast("Scanning popular tokens for smart wallets...");await api("/api/wallets/auto-discover",{method:"POST"});setTimeout(loadWallets,15000)}
 
 // === SETTINGS ===
 async function loadSettings(){

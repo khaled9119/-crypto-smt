@@ -12,10 +12,7 @@ class SmartWalletTracker:
     def __init__(self):
         self.db = Database()
         self.running = Event()
-        self.preset_wallets = [
-            "0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2",
-            "0x7a58c0b8c2ad9c0b3b4c4f5f6a7b8c9d0e1f2a3b",
-        ]
+        self.preset_wallets = []
 
     def start(self):
         self.running.set()
@@ -25,12 +22,14 @@ class SmartWalletTracker:
         self.running.clear()
 
     def _scan_loop(self):
+        # Immediate first scan, then every 5 min
         while self.running.is_set():
-            for chain_id in ["ethereum", "bsc"]:
+            for chain_id in ["ethereum", "bsc", "base"]:
                 if CHAINS[chain_id]["api_key"]:
                     for wallet in self.preset_wallets:
                         self._analyze_wallet(wallet, chain_id)
             time.sleep(300)
+        time.sleep(5)
 
     def _analyze_wallet(self, wallet, chain_id):
         cfg = CHAINS[chain_id]
