@@ -354,6 +354,110 @@ def api_token_advanced():
         return jsonify({"error": str(e)}), 500
 
 
+# ===== PORTFOLIO TRACKER =====
+
+@app.route("/api/portfolio", methods=["GET"])
+def api_portfolio_get():
+    conn = db._get_conn()
+    conn.execute("CREATE TABLE IF NOT EXISTS portfolio (id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT NOT NULL, name TEXT, amount REAL NOT NULL, buy_price REAL, chain TEXT, notes TEXT, created_at TEXT)")
+    conn.commit()
+    rows = conn.execute("SELECT * FROM portfolio ORDER BY id DESC").fetchall()
+    conn.close()
+    # Enrich with current prices
+    enriched = []
+    for r in rows:
+        item = dict(r)
+        try:
+            sym = item.get("symbol", "").lower()
+            cg_id = {"eth": "ethereum", "btc": "bitcoin", "bnb": "binancecoin"}.get(sym)
+            if not cg_id:
+                cg_id = sym
+            price_data = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={cg_id}&vs_currencies=usd&include_24hr_change=true", timeout=5).json()
+            current_price = price_data.get(cg_id, {}).get("usd", 0)
+            change_24h = price_data.get(cg_id, {}).get("usd_24h_change", 0)
+            item["current_price"] = current_price
+            item["change_24h"] = round(change_24h, 2) if change_24h else 0
+            item["value_usd"] = round(item["amount"] * current_price, 2) if current_price else 0
+            if item.get("buy_price"):
+                item["pnl"] = round((current_price - item["buy_price"]) * item["amount"], 2)
+                item["pnl_pct"] = round((current_price / item["buy_price"] - 1) * 100, 2) if item["buy_price"] > 0 else 0
+            else:
+                item["pnl"] = 0
+                item["pnl_pct"] = 0
+        except:
+            item["current_price"] = 0
+            item["change_24h"] = 0
+            item["value_usd"] = 0
+            item["pnl"] = 0
+            item["pnl_pct"] = 0
+        enriched.append(item)
+    return jsonify(enriched)
+
+@app.route("/api/portfolio", methods=["POST"])
+def api_portfolio_add():
+    data = request.get_json()
+    conn = db._get_conn()
+    conn.execute("CREATE TABLE IF NOT EXISTS portfolio (id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT NOT NULL, name TEXT, amount REAL NOT NULL, buy_price REAL, chain TEXT, notes TEXT, created_at TEXT)")
+    now = datetime.now().isoformat()
+    conn.execute("INSERT INTO portfolio (symbol, name, amount, buy_price, chain, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (data.get("symbol","").upper(), data.get("name",""), float(data.get("amount",0)), float(data.get("buy_price",0) or 0), data.get("chain","ethereum"), data.get("notes",""), now))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+@app.route("/api/portfolio/<int:pid>", methods=["DELETE"])
+def api_portfolio_delete(pid):
+    conn = db._get_conn()
+    conn.execute("DELETE FROM portfolio WHERE id=?", (pid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
+@app.route("/api/portfolio/total")
+def api_portfolio_total():
+    conn = db._get_conn()
+    conn.execute("CREATE TABLE IF NOT EXISTS portfolio (id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT NOT NULL, name TEXT, amount REAL NOT NULL, buy_price REAL, chain TEXT, notes TEXT, created_at TEXT)")
+    rows = conn.execute("SELECT * FROM portfolio").fetchall()
+    conn.close()
+    total_value = 0
+    total_cost = 0
+    for r in rows:
+        item = dict(r)
+        try:
+            sym = item.get("symbol", "").lower()
+            cg_id = {"eth": "ethereum", "btc": "bitcoin", "bnb": "binancecoin"}.get(sym, sym)
+            price = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={cg_id}&vs_currencies=usd", timeout=5).json().get(cg_id, {}).get("usd", 0)
+            total_value += item["amount"] * price
+            total_cost += item["amount"] * (item.get("buy_price") or 0)
+        except:
+            pass
+    return jsonify({"total_value": round(total_value, 2), "total_cost": round(total_cost, 2), "pnl": round(total_value - total_cost, 2), "pnl_pct": round((total_value/total_cost - 1)*100, 2) if total_cost > 0 else 0})
+
+# ===== SEARCH HISTORY =====
+
+SEARCH_HISTORY = []
+SEARCH_HISTORY_MAX = 50
+
+@app.route("/api/search/history")
+def api_search_history():
+    return jsonify(SEARCH_HISTORY)
+
+@app.route("/api/search/history", methods=["POST"])
+def api_search_add():
+    data = request.get_json()
+    entry = {"type": data.get("type", "token"), "query": data.get("query", ""), "chain": data.get("chain", ""), "result": data.get("result", ""), "timestamp": datetime.now().isoformat()}
+    global SEARCH_HISTORY
+    SEARCH_HISTORY.insert(0, entry)
+    if len(SEARCH_HISTORY) > SEARCH_HISTORY_MAX:
+        SEARCH_HISTORY = SEARCH_HISTORY[:SEARCH_HISTORY_MAX]
+    return jsonify({"status": "ok"})
+
+@app.route("/api/search/history/clear", methods=["POST"])
+def api_search_clear():
+    global SEARCH_HISTORY
+    SEARCH_HISTORY = []
+    return jsonify({"status": "ok"})
+
 # ===== GAS PRICES =====
 
 GAS_CACHE = {}

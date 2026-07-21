@@ -80,6 +80,8 @@ canvas#particles{position:fixed;inset:0;pointer-events:none;z-index:0}
 .stat-card.st-yellow .stat-value{color:var(--yellow)}.stat-card.st-purple .stat-value{color:var(--purple)}
 .stat-card.st-cyan::before{background:linear-gradient(135deg,rgba(56,189,248,.04),transparent)}
 .stat-card.st-green::before{background:linear-gradient(135deg,rgba(34,197,94,.04),transparent)}
+.stat-card.st-red .stat-value{color:var(--red)}.stat-card.st-red::before{background:linear-gradient(135deg,rgba(239,68,68,.04),transparent)}
+.stat-card.st-orange .stat-value{color:var(--orange)}.stat-card.st-orange::before{background:linear-gradient(135deg,rgba(251,146,60,.04),transparent)}
 
 /* Cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;transition:all .3s;backdrop-filter:blur(12px)}
@@ -241,10 +243,12 @@ input::placeholder{color:var(--dim)}
 <button data-tab="portfolio"><span class="icon">💼</span> Portfolio</button>
 <div class="nav-label">System</div>
 <button data-tab="alerts"><span class="icon">🔔</span> Notifications</button>
+<button data-tab="markets"><span class="icon">📈</span> Markets</button>
 <button data-tab="settings"><span class="icon">⚙️</span> Settings</button>
 </nav>
 <div class="sidebar-footer">
 <span class="live-dot"></span> Live · <span id="sidebar-time">--:--:--</span>
+<div style="margin-top:6px;display:flex;gap:4px"><button class="btn btn-ghost btn-sm" onclick="toggleAlertSound()" id="soundBtn" style="font-size:9px;padding:2px 8px" title="Toggle alert sound">🔊</button></div>
 </div>
 </aside>
 
@@ -335,8 +339,10 @@ input::placeholder{color:var(--dim)}
 </div>
 </div>
 <div class="card">
-<div class="card-header"><span class="card-title">📋 History</span></div>
+<div class="card-header"><span class="card-title">📋 History</span><div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" onclick="loadRecentTokens()">⟳</button><button class="btn btn-ghost btn-sm" onclick="clearSearchHistory()">🗑</button></div></div>
 <div class="card-body scroll-list" id="recentTokens" style="padding:8px 16px"></div>
+<div class="card-header" style="border-top:1px solid var(--border);margin-top:0"><span class="card-title">🔍 Search Activity</span></div>
+<div class="card-body scroll-list" id="searchActivity" style="padding:8px 16px;max-height:200px"></div>
 </div>
 </div>
 </div>
@@ -367,6 +373,25 @@ input::placeholder{color:var(--dim)}
 <div id="tab-portfolio" class="tab">
 <div class="grid-2">
 <div class="card">
+<div class="card-header"><span class="card-title">💼 My Portfolio</span><div><span id="portTotal" style="font-size:16px;font-weight:700;color:var(--green);font-family:var(--mono)">$0</span></div></div>
+<div class="card-body">
+<div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+<div style="text-align:center;background:rgba(30,42,56,.6);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--dim)">Total Value</div><div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--cyan)" id="ptValue">$0</div></div>
+<div style="text-align:center;background:rgba(30,42,56,.6);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--dim)">Total Cost</div><div style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--yellow)" id="ptCost">$0</div></div>
+<div style="text-align:center;background:rgba(30,42,56,.6);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--dim)">P&L</div><div style="font-size:16px;font-weight:700;font-family:var(--mono)" id="ptPnl">$0</div></div>
+</div>
+<div class="form-row" style="margin-bottom:12px;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));display:grid;gap:8px">
+<input id="pfSymbol" placeholder="Symbol (e.g. ETH)" style="grid-column:span 1">
+<input id="pfAmount" placeholder="Amount" type="number" step="any" style="grid-column:span 1">
+<input id="pfBuyPrice" placeholder="Buy Price $" type="number" step="any" style="grid-column:span 1">
+<select id="pfChain" style="grid-column:span 1"><option value="">Chain</option><option value="ethereum">Ethereum</option><option value="bsc">BSC</option><option value="base">Base</option></select>
+<button class="btn btn-success" onclick="addPortfolio()" id="pfBtn" style="grid-column:span 1">➕ Add</button>
+</div>
+</div>
+<div class="table-wrap"><table><thead><tr><th>Symbol</th><th>Amount</th><th>Buy Price</th><th>Current</th><th style="text-align:right">Value</th><th style="text-align:right">P&L</th><th></th></tr></thead>
+<tbody id="pfTable"></tbody></table></div>
+</div>
+<div class="card">
 <div class="card-header"><span class="card-title">💼 Wallet Balance</span></div>
 <div class="card-body">
 <div style="font-size:13px;color:var(--fg2);line-height:1.7;margin-bottom:12px">Check native coin balances across all chains for any wallet.</div>
@@ -389,6 +414,23 @@ input::placeholder{color:var(--dim)}
 </div>
 
 <!-- MARKETS -->
+<div id="tab-markets" class="tab">
+<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+<div class="stat-card st-cyan"><div class="stat-icon">📈</div><div class="stat-label">Gainers</div><div class="stat-value" id="mktGainers">0</div></div>
+<div class="stat-card st-red"><div class="stat-icon">📉</div><div class="stat-label">Losers</div><div class="stat-value" id="mktLosers">0</div></div>
+<div class="stat-card st-yellow"><div class="stat-icon">🔥</div><div class="stat-label">Trending</div><div class="stat-value" id="mktTrending">0</div></div>
+<div class="stat-card st-green"><div class="stat-icon">🚀</div><div class="stat-label">Volume Surge</div><div class="stat-value" id="mktSurge">0</div></div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<button class="btn btn-ghost btn-sm active-tab" onclick="switchMktTab('gainers',this)" style="background:var(--cyan-bg);color:var(--cyan)">🚀 Gainers</button>
+<button class="btn btn-ghost btn-sm" onclick="switchMktTab('losers',this)">📉 Losers</button>
+<button class="btn btn-ghost btn-sm" onclick="switchMktTab('trending',this)">🔥 Trending</button>
+<button class="btn btn-ghost btn-sm" onclick="switchMktTab('surge',this)">⚡ Volume Surge</button>
+<button class="btn btn-ghost btn-sm" onclick="switchMktTab('new',this)">🆕 New Listings</button>
+</div>
+<div id="mktContent"><div class="empty-state"><div class="icon">📈</div><p>Loading markets...</p></div></div>
+</div>
+
 <!-- ALERTS / TELEGRAM -->
 <div id="tab-alerts" class="tab">
 <div class="grid-2">
@@ -476,10 +518,10 @@ const tab=document.getElementById("tab-"+b.dataset.tab);
 if(tab){tab.classList.add("active")}
 // Update header title
 document.querySelector(".header-left div:last-child").textContent=b.textContent.trim().replace(/^\S+\s*/,'');
-const m={whales:"loadAllWhales",wallets:"loadWallets",dashboard:"loadStatus",alerts:"loadTelegram"};
+const m={whales:"loadAllWhales",wallets:"loadWallets",dashboard:"loadStatus",alerts:"loadTelegram",markets:"loadMarkets",portfolio:"loadPortfolio"};
 if(m[b.dataset.tab]) window[m[b.dataset.tab]]();
-if(b.dataset.tab==="analyze") loadRecentTokens();
-if(b.dataset.tab==="portfolio") loadGas();
+if(b.dataset.tab==="analyze"){loadRecentTokens();loadSearchHistory()}
+if(b.dataset.tab==="portfolio"){loadPortfolio();loadGas()}
 if(window.innerWidth<=768) toggleSidebar();
 }});
 
@@ -639,6 +681,7 @@ if(w.length){dw.innerHTML=w.sort((a,b)=>(b.estimated_profit_usd||0)-(a.estimated
 async function trackWallet(){
 const a=document.getElementById("walletAddr").value.trim();
 if(!a.startsWith("0x")) return toast("Invalid address","var(--red)");
+fetch("/api/search/history",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"wallet",query:a.slice(0,20)+"...",chain:"",result:"tracked"})});
 const b=document.getElementById("trackBtn");b.disabled=true;b.innerHTML='<span class="spinner"></span> Tracking...';
 const r=await api("/api/wallet/track",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:a})});
 if(r.status==="ok"){toast(r.message);setTimeout(loadWallets,3000)}else toast(r.error||"Error","var(--red)");
@@ -707,6 +750,7 @@ document.getElementById("tokenResult").innerHTML=html+h;
 async function checkBalance(){
 const a=document.getElementById("balAddr").value.trim();
 if(!a.startsWith("0x")||a.length<42) return toast("Invalid address","var(--red)");
+fetch("/api/search/history",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"balance",query:a.slice(0,20)+"...",chain:"",result:"checked"})});
 const b=document.getElementById("balBtn");b.disabled=true;b.innerHTML='<span class="spinner"></span> Checking...';
 try{
 const r=await api("/api/balance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({address:a})});
@@ -754,6 +798,135 @@ if(r[c]){const extra=document.createElement("span");extra.style.cssText="font-si
 }catch(e){}}
 
 function switchToScan(sym){document.querySelector('[data-tab=analyze]').click();document.getElementById("tokenAddr").value=sym;}
+
+// === MARKETS ===
+let mktData={};
+async function loadMarkets(){
+try{
+const d=await api("/api/markets");
+mktData=d;
+if(d.trending) document.getElementById("mktTrending").textContent=d.trending.length;
+if(d.gainers) document.getElementById("mktGainers").textContent=d.gainers.length;
+if(d.losers) document.getElementById("mktLosers").textContent=d.losers.length;
+switchMktTab('gainers');
+}catch(e){}}
+function switchMktTab(tab,btn){
+document.querySelectorAll('#tab-markets .btn-ghost.active-tab').forEach(b=>{b.style.background='';b.style.color='var(--fg2)'});
+if(btn){btn.style.background='var(--cyan-bg)';btn.style.color='var(--cyan)';btn.classList.add('active-tab')}
+let items=[];
+if(tab==='gainers') items=mktData.gainers||[];
+else if(tab==='losers') items=mktData.losers||[];
+else if(tab==='trending') items=mktData.trending||[];
+else if(tab==='surge') items=mktData.volume_surge||[];
+else if(tab==='new') items=mktData.new_listings||[];
+const el=document.getElementById("mktContent");
+if(!items.length){el.innerHTML='<div class="empty-state"><div class="icon">📈</div><p>No data</p></div>';return}
+if(tab==='trending'){
+el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">${items.map((c,i)=>`
+<div style="background:rgba(30,42,56,.6);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="switchToScan('${c.symbol}')">
+<img src="${c.thumb}" style="width:32px;height:32px;border-radius:50%" onerror="this.style.display='none'" loading="lazy">
+<div><div style="font-weight:600;font-size:13px">${c.name}</div><div style="font-size:10px;color:var(--dim)">#${c.rank} · ${c.symbol}</div></div>
+<div style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim)">${c.price_btc?c.price_btc.toFixed(8)+' BTC':''}</div>
+</div>`).join("")}</div>`}
+else{
+el.innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Price</th><th style="text-align:right">24h</th><th style="text-align:right">Volume</th><th style="text-align:right">Market Cap</th></tr></thead><tbody>${items.slice(0,25).map((c,i)=>`
+<tr onclick="switchToScan('${c.symbol}')" style="cursor:pointer">
+<td style="color:var(--dim)">${i+1}</td>
+<td style="font-family:var(--font);font-weight:500"><img src="${c.image||''}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'" loading="lazy">${c.name||c.symbol}</td>
+<td style="text-align:right;font-family:var(--mono)">$${(c.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6})}</td>
+<td style="text-align:right;font-family:var(--mono);color:${(c.change_24h||0)>=0?'var(--green)':'var(--red)'}">${(c.change_24h||0)>=0?'+':''}${(c.change_24h||0).toFixed(2)}%</td>
+<td style="text-align:right;font-family:var(--mono);font-size:10px">$${(c.volume||0).toLocaleString()}</td>
+<td style="text-align:right;font-family:var(--mono);font-size:10px;color:var(--dim)">$${(c.market_cap||0).toLocaleString()}</td>
+</tr>`).join("")}</tbody></table></div>`}}
+
+// === PORTFOLIO ===
+async function loadPortfolio(){
+try{
+const p=await api("/api/portfolio");
+const tb=document.getElementById("pfTable");
+if(!p.length){tb.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="icon">💼</div><p>No holdings. Add your first asset above.</p></div></td></tr>';return}
+tb.innerHTML=p.map(x=>`<tr>
+<td style="font-family:var(--font);font-weight:600">${x.symbol||"?"}</td>
+<td style="font-family:var(--mono)">${x.amount}</td>
+<td style="font-family:var(--mono)">$${(x.buy_price||0).toFixed(2)}</td>
+<td style="font-family:var(--mono)">$${(x.current_price||0).toFixed(2)} <span style="font-size:9px;color:${(x.change_24h||0)>=0?'var(--green)':'var(--red)'}">${(x.change_24h||0)>=0?'+':''}${(x.change_24h||0).toFixed(2)}%</span></td>
+<td style="text-align:right;font-family:var(--mono);color:var(--cyan)">$${(x.value_usd||0).toLocaleString()}</td>
+<td style="text-align:right;font-family:var(--mono);color:${(x.pnl||0)>=0?'var(--green)':'var(--red)'}">${(x.pnl||0)>=0?'+':''}$${(x.pnl||0).toLocaleString()} (${(x.pnl_pct||0)>=0?'+':''}${(x.pnl_pct||0).toFixed(1)}%)</td>
+<td><button class="btn btn-danger btn-sm" onclick="deletePortfolio(${x.id})">✕</button></td>
+</tr>`).join("");
+// Update totals
+try{
+const t=await api("/api/portfolio/total");
+document.getElementById("ptValue").textContent="$"+t.total_value.toLocaleString();
+document.getElementById("ptCost").textContent="$"+t.total_cost.toLocaleString();
+const pnlEl=document.getElementById("ptPnl");
+pnlEl.textContent=(t.pnl>=0?'+':'')+"$"+t.pnl.toLocaleString()+" ("+(t.pnl_pct>=0?'+':'')+t.pnl_pct.toFixed(1)+"%)";
+pnlEl.style.color=t.pnl>=0?'var(--green)':'var(--red)';
+document.getElementById("portTotal").textContent="$"+t.total_value.toLocaleString();
+}catch(e){}
+}catch(e){}}
+async function addPortfolio(){
+const sym=document.getElementById("pfSymbol").value.trim().toUpperCase();
+const amt=parseFloat(document.getElementById("pfAmount").value);
+const pr=parseFloat(document.getElementById("pfBuyPrice").value);
+const ch=document.getElementById("pfChain").value;
+if(!sym||!amt) return toast("Enter symbol and amount","var(--red)");
+document.getElementById("pfBtn").disabled=true;document.getElementById("pfBtn").innerHTML='<span class="spinner"></span>';
+await api("/api/portfolio",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol:sym,name:sym,amount:amt,buy_price:pr||0,chain:ch||"ethereum",notes:""})});
+document.getElementById("pfBtn").disabled=false;document.getElementById("pfBtn").innerHTML="➕ Add";
+document.getElementById("pfSymbol").value="";document.getElementById("pfAmount").value="";document.getElementById("pfBuyPrice").value="";
+toast("Added "+sym);loadPortfolio()}
+async function deletePortfolio(id){await api("/api/portfolio/"+id,{method:"DELETE"});toast("Removed");loadPortfolio()}
+
+// === SEARCH HISTORY ===
+async function loadSearchHistory(){
+try{
+const h=await api("/api/search/history"),el=document.getElementById("searchActivity");
+if(!h.length){el.innerHTML='<div style="text-align:center;padding:16px;color:var(--dim);font-size:12px">No recent searches</div>';return}
+el.innerHTML=h.map(x=>`<div style="padding:6px 0;border-bottom:1px solid rgba(30,42,56,.3);display:flex;justify-content:space-between;font-size:11px">
+<span><span style="color:${x.type==='token'?'var(--cyan)':'var(--yellow)'}">${x.type==='token'?'🔍':'👛'}</span> ${x.query.slice(0,20)}</span>
+<span style="color:var(--dim);font-size:10px">${x.timestamp.slice(11,19)||''}</span>
+</div>`).join("")
+}catch(e){}}
+async function clearSearchHistory(){await api("/api/search/history/clear",{method:"POST"});loadSearchHistory();toast("History cleared")}
+
+// Add search tracking to analyzeToken
+const origAnalyze=window.analyzeToken;
+window.analyzeToken=function(){
+const a=document.getElementById("tokenAddr").value.trim(),ch=document.getElementById("tokenChain").value;
+if(a.startsWith("0x")&&a.length>=42){
+fetch("/api/search/history",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"token",query:a.slice(0,20)+"...",chain:ch,result:"analyzed"})});
+setTimeout(loadSearchHistory,1000)}
+return origAnalyze.apply(this,arguments)};
+
+// === SOUND ALERT ===
+let alertSoundEnabled=true;
+function toggleAlertSound(){alertSoundEnabled=!alertSoundEnabled;document.getElementById("soundBtn").textContent=alertSoundEnabled?"🔊":"🔇";toast("Sound "+(alertSoundEnabled?"ON":"OFF"));}
+function playAlertSound(){
+if(!alertSoundEnabled) return;
+try{
+const ctx=new(window.AudioContext||window.webkitAudioContext)();
+const osc=ctx.createOscillator();osc.type="sine";osc.frequency.value=880;
+const gain=ctx.createGain();gain.gain.setValueAtTime(0.15,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.4);
+setTimeout(()=>{
+const osc2=ctx.createOscillator();osc2.type="sine";osc2.frequency.value=1320;
+const gain2=ctx.createGain();gain2.gain.setValueAtTime(0.15,ctx.currentTime);gain2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
+osc2.connect(gain2);gain2.connect(ctx.destination);osc2.start();osc2.stop(ctx.currentTime+0.3);
+},150)}catch(e){}}
+
+// Modify loadAllWhales to play sound on new whales
+let prevWhaleCount=0;
+const origLoadAllWhales=window.loadAllWhales;
+window.loadAllWhales=function(){
+const result=origLoadAllWhales.apply(this,arguments);
+(async()=>{
+try{
+if(whaleCache.length>prevWhaleCount&&prevWhaleCount>0){playAlertSound()}
+prevWhaleCount=whaleCache.length;
+}catch(e){}
+})();
+return result}
 
 // === SORT ===
 let sortState={};
@@ -821,7 +994,7 @@ requestAnimationFrame(anim)}
 initParticles()}
 
 // === INIT ===
-initCharts();loadHeader();loadStatus();loadDashboardWhales();loadWallets();loadSettings();loadTelegram();loadGas();
+initCharts();loadHeader();loadStatus();loadDashboardWhales();loadWallets();loadSettings();loadTelegram();loadGas();loadMarkets();loadSearchHistory();loadPortfolio();
 setInterval(()=>{if(!monitoring)loadStatus()},15000);
 setInterval(()=>{if(!monitoring)loadDashboardWhales()},20000);
 setInterval(loadHeader,10000);
